@@ -1,0 +1,4369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindMap Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ====================================================
+   GLOBAL RESET & VARIABLES
+==================================================== */
+:root {
+  --bg:      #06080f;
+  --surface: #0d1117;
+  --panel:   #0f1520;
+  --border:  #1c2333;
+  --border2: #243047;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --muted2:  #8892a4;
+  --danger:  #f87171;
+  --success: #34d399;
+
+  /* ownership accent */
+  --ow-accent:  #4f8ef7;
+  --ow-accent2: #a78bfa;
+  --ow-accent3: #60a5fa;
+
+  /* ecosystem accent */
+  --ec-accent:   #0ea5e9;
+  --ec-collab:   #22d3ee;
+  --ec-compete:  #f97316;
+  --ec-invest:   #a78bfa;
+  --ec-neutral:  #94a3b8;
+
+  /* policy/geo accent */
+  --po-accent:   #f59e0b;
+  --po-accent2:  #fbbf24;
+  --po-support:  #34d399;
+  --po-tension:  #f87171;
+  --po-compete:  #fb923c;
+  --po-neutral:  #94a3b8;
+  --po-node-bg:  #0f1a0a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Pretendard', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ====================================================
+   TOP NAV (shared)
+==================================================== */
+.topnav {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 50;
+  position: relative;
+}
+.nav-logo {
+  padding: 0 16px;
+  font-family: 'Nanum Myeongjo', serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.nav-logo span { opacity: 0.45; font-size: 0.7rem; font-weight: 400; }
+
+/* Tab switcher */
+.tab-switcher {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 6px;
+  gap: 2px;
+}
+.tab-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s;
+  position: relative;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); background: var(--panel); }
+.tab-btn.active {
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ow-accent);
+}
+.tab-btn.active[data-tab="eco"]::after { background: var(--ec-accent); }
+.tab-btn.active[data-tab="po"]::after  { background: var(--po-accent); }
+
+.nav-spacer { flex: 1; }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  border-left: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink:0; }
+
+/* ====================================================
+   SHARED BUTTON STYLES
+==================================================== */
+.btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+}
+.btn-outline:hover { border-color: var(--ow-accent); color: var(--ow-accent); }
+.btn-primary-ow { background: var(--ow-accent); color: #fff; }
+.btn-primary-ow:hover { background: #3b7de8; }
+.btn-primary-ec { background: var(--ec-accent); color: #fff; }
+.btn-primary-ec:hover { background: #0284c7; }
+.btn-sm { padding: 5px 11px; font-size: 0.78rem; }
+.btn-danger { color: var(--danger) !important; border-color: var(--danger) !important; }
+
+/* ====================================================
+   PAGE CONTAINERS (tab switching)
+==================================================== */
+.page {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  /* Do NOT set overflow:hidden here - it creates a stacking context
+     that clips position:fixed modals */
+}
+.page.active { display: flex; }
+
+/* ====================================================
+   SHARED LAYOUT (sidebar + canvas + right-panel)
+==================================================== */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden; /* needed to contain sidebar/canvas, but modals are outside .layout */
+}
+
+/* ---- SIDEBAR ---- */
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.22s cubic-bezier(0.4,0,0.2,1),
+              min-width 0.22s cubic-bezier(0.4,0,0.2,1);
+  min-width: 200px;
+  position: relative;
+  z-index: 5;
+}
+.sidebar.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+.sidebar-header {
+  padding: 10px 10px 9px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+.sidebar-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.15s;
+}
+.sidebar.collapsed .sidebar-title { opacity: 0; width: 0; }
+.sidebar.collapsed .sidebar-add-btn { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
+
+/* Toggle collapse button */
+.sidebar-toggle {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover { background: var(--panel); color: var(--text); }
+
+.sidebar-add-btn {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 5px;
+}
+.sidebar.collapsed .list-scroll { padding: 6px 4px; }
+
+/* Group / Industry items */
+.list-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: all 0.13s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  font-size: 0.83rem;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.list-item:hover { background: var(--panel); }
+.list-item.active-ow {
+  background: rgba(79,142,247,0.09);
+  border-color: rgba(79,142,247,0.22);
+}
+.list-item.active-ec {
+  background: rgba(14,165,233,0.08);
+  border-color: rgba(14,165,233,0.2);
+}
+.list-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.list-icon { font-size: 14px; flex-shrink: 0; }
+.list-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.15s; }
+.list-count { font-size: 0.7rem; color: var(--muted); flex-shrink: 0; transition: opacity 0.15s; }
+.sidebar.collapsed .list-name,
+.sidebar.collapsed .list-count { opacity: 0; width: 0; overflow: hidden; }
+.sidebar.collapsed .list-item { padding: 8px; justify-content: center; gap: 0; }
+
+.add-list-btn {
+  margin: 5px 6px 7px;
+  padding: 8px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px dashed var(--border2);
+  color: var(--muted);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  width: calc(100% - 12px);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.add-list-btn:hover { border-color: var(--ow-accent); color: var(--ow-accent); }
+.add-list-btn.eco:hover { border-color: var(--ec-accent); color: var(--ec-accent); }
+.sidebar.collapsed .add-list-btn { opacity: 0; pointer-events: none; }
+
+/* ---- CANVAS AREA ---- */
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+.canvas-svg {
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  display: block;
+}
+
+/* ---- TOOLBAR ---- */
+.toolbar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  background: rgba(13,17,23,0.92);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 4px 6px;
+  z-index: 10;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 14px;
+  transition: all 0.13s;
+  flex-shrink: 0;
+}
+.tool-btn:hover { background: var(--panel); color: var(--text); }
+.tool-btn.active-ow { background: rgba(79,142,247,0.14); color: var(--ow-accent); }
+.tool-btn.active-ec { background: rgba(14,165,233,0.14); color: var(--ec-accent); }
+.tool-sep { width: 1px; height: 20px; background: var(--border); margin: 0 1px; flex-shrink: 0; }
+
+/* Canvas hint */
+.canvas-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13,17,23,0.75);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+
+/* Eco legend */
+.eco-legend {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(13,17,23,0.9);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  backdrop-filter: blur(8px);
+}
+.legend-title {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  color: var(--muted2);
+  margin-bottom: 4px;
+}
+.legend-line { width: 20px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+/* ---- RIGHT PANEL ---- */
+/* Overlay style — floats over canvas, doesn't shrink it */
+.right-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 272px;
+  background: rgba(13,17,23,0.97);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(272px);
+  transition: transform 0.26s cubic-bezier(0.4,0,0.2,1);
+  z-index: 20;
+  backdrop-filter: blur(10px);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+}
+.right-panel.open { transform: translateX(0); }
+/* canvas-area needs position relative for absolute right-panel */
+.canvas-area { position: relative; }
+.panel-header {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.panel-title { font-size: 0.88rem; font-weight: 600; }
+.panel-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.13s;
+  line-height: 1;
+}
+.panel-close:hover { background: var(--panel); color: var(--text); }
+.panel-body { flex: 1; overflow-y: auto; padding: 12px 14px; }
+.field-group { margin-bottom: 11px; }
+.field-label {
+  font-size: 0.71rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.field-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.83rem;
+  outline: none;
+  transition: border-color 0.18s;
+}
+.field-input:focus { border-color: var(--ow-accent); }
+.field-input.eco:focus { border-color: var(--ec-accent); }
+select.field-input { appearance: none; cursor: pointer; }
+.tags-area { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tag {
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 0.71rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.tag-ow {
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.25);
+  color: var(--ow-accent3);
+}
+.tag-ec {
+  background: rgba(14,165,233,0.1);
+  border: 1px solid rgba(14,165,233,0.25);
+  color: #7dd3fc;
+}
+.tag-del { opacity: 0.55; font-size: 10px; cursor: pointer; }
+.tag-del:hover { opacity: 1; }
+.tag-input-row { display: flex; gap: 4px; margin-top: 4px; }
+.tag-input { flex: 1; }
+.panel-sep { height: 1px; background: var(--border); margin: 11px 0; }
+.btn-full { width: 100%; justify-content: center; margin-top: 5px; }
+
+/* ====================================================
+   CONTEXT MENU
+==================================================== */
+.ctx-menu {
+  position: fixed;
+  z-index: 300;
+  background: rgba(13,17,23,0.97);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 4px;
+  min-width: 168px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  display: none;
+  backdrop-filter: blur(10px);
+}
+.ctx-item {
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-size: 0.81rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  transition: background 0.1s;
+}
+.ctx-item:hover { background: var(--panel); }
+.ctx-item.danger { color: var(--danger); }
+.ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* ====================================================
+   MODALS
+==================================================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 22px;
+  width: 92%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Nanum Myeongjo', serif;
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+.modal-sub { font-size: 0.79rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 7px; margin-top: 14px; }
+.modal-actions .btn { flex: 1; justify-content: center; }
+
+/* ====================================================
+   COMPANY POPUP
+==================================================== */
+.company-popup {
+  position: fixed;
+  z-index: 250;
+  background: rgba(13,17,23,0.97);
+  border: 1px solid var(--border2);
+  border-radius: 13px;
+  padding: 15px;
+  width: 290px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.75);
+  display: none;
+  backdrop-filter: blur(12px);
+}
+.popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.popup-company { font-size: 0.93rem; font-weight: 600; }
+.popup-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+.popup-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  padding: 1px 3px;
+}
+.popup-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 10px; }
+.popup-note { font-size: 0.76rem; color: var(--muted2); margin-bottom: 10px; line-height: 1.5; }
+.popup-actions { display: flex; flex-direction: column; gap: 4px; }
+.popup-action-btn {
+  padding: 8px 11px;
+  border-radius: 7px;
+  font-size: 0.79rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text);
+  font-family: 'Pretendard', sans-serif;
+  text-align: left;
+  transition: all 0.13s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.popup-action-btn:hover { background: var(--panel); border-color: var(--ow-accent); }
+.popup-action-btn.ec:hover { border-color: var(--ec-accent); }
+.popup-cross-header {
+  font-size: 0.69rem;
+  color: var(--muted);
+  margin: 9px 0 3px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.popup-cross-item {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.77rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  color: var(--muted2);
+}
+.popup-cross-item:hover { background: var(--panel); color: var(--text); }
+
+/* Ecosystem rel-type buttons */
+.rel-btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.rel-btn {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid;
+  background: transparent;
+  font-family: 'Pretendard', sans-serif;
+  transition: all 0.12s;
+}
+.rel-btn[data-rel="collab"]  { border-color: var(--ec-collab);  color: var(--ec-collab); }
+.rel-btn[data-rel="compete"] { border-color: var(--ec-compete); color: var(--ec-compete); }
+.rel-btn[data-rel="invest"]  { border-color: var(--ec-invest);  color: var(--ec-invest); }
+.rel-btn[data-rel="neutral"] { border-color: var(--ec-neutral); color: var(--ec-neutral); }
+.rel-btn.sel[data-rel="collab"]  { background: rgba(34,211,238,0.14); }
+.rel-btn.sel[data-rel="compete"] { background: rgba(249,115,22,0.14); }
+.rel-btn.sel[data-rel="invest"]  { background: rgba(167,139,250,0.14); }
+.rel-btn.sel[data-rel="neutral"] { background: rgba(148,163,184,0.14); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── SEARCH ── */
+.nav-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 32px;
+  gap: 6px;
+  width: 240px;
+  flex-shrink: 0;
+}
+.nav-search-icon { font-size: 12px; color: var(--muted); pointer-events: none; }
+.nav-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.82rem;
+}
+.nav-search-input::placeholder { color: var(--muted); }
+.nav-search-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+}
+.nav-search-clear:hover { color: var(--text); }
+.search-drop {
+  position: fixed;
+  top: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  padding: 6px 0;
+}
+.search-section-hdr {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 14px 3px;
+}
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.search-item:hover { background: var(--panel); }
+.search-item.active-kb { background: var(--panel); }
+.search-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.search-item-name { font-size: 0.84rem; font-weight: 500; flex: 1; }
+.search-item-meta { font-size: 0.73rem; color: var(--muted); flex-shrink: 0; }
+.search-badge {
+  font-size: 0.66rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.search-badge.ow { background: rgba(79,142,247,0.15); color: var(--ow-accent); }
+.search-badge.ec { background: rgba(14,165,233,0.12); color: var(--ec-accent); }
+.search-empty { padding: 18px 14px; color: var(--muted); font-size: 0.83rem; text-align: center; }
+
+/* SVG helpers */
+.node-g { cursor: pointer; }
+.edge-label-txt {
+  font-size: 11px;
+  fill: #94a3b8;
+  font-family: 'Pretendard', sans-serif;
+  pointer-events: none;
+}
+.cluster-badge-txt {
+  font-size: 11px;
+  fill: #7aadcc;
+  font-family: 'Pretendard', sans-serif;
+  pointer-events: none;
+}
+
+/* Rename button in sidebar */
+.list-rename-btn {
+  opacity: 0;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 1px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.13s;
+}
+.list-item:hover .list-rename-btn { opacity: 0.7; }
+.list-rename-btn:hover { opacity: 1 !important; color: var(--text); background: var(--border2); }
+
+/* OW Node type legend */
+.ow-legend {
+  position: absolute;
+  bottom: 36px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(13,17,23,0.9);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  backdrop-filter: blur(8px);
+}
+
+/* Image handles */
+.img-sel-rect { fill: none; stroke: #4f8ef7; stroke-width: 1.5; stroke-dasharray: 4,3; pointer-events: none; }
+
+/* ====================================================
+   POLICY / GEO MODULE STYLES
+==================================================== */
+.btn-primary-po { background: var(--po-accent); color: #000; font-weight:700; }
+.btn-primary-po:hover { background: var(--po-accent2); }
+.btn-outline:hover.po { border-color: var(--po-accent); color: var(--po-accent); }
+.active-po { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.28); }
+
+.po-legend {
+  position: absolute;
+  top: 12px; right: 12px; z-index: 10;
+  background: rgba(13,17,23,0.92);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  backdrop-filter: blur(8px);
+}
+
+/* Policy card node (foreignObject-based for multiline text) */
+.po-card {
+  background: #0a1410;
+  border-radius: 10px;
+  border: 1.5px solid var(--po-accent);
+  padding: 8px 10px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  cursor: move;
+  user-select: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.po-card.type-policy  { border-color: var(--po-accent); background: #12100a; }
+.po-card.type-country { border-color: #60a5fa; background: #08101a; }
+.po-card.type-agenda  { border-color: #34d399; background: #08120e; }
+.po-card.type-industry{ border-color: #a78bfa; background: #100a1a; }
+.po-card-title {
+  font-size: 11px; font-weight: 700;
+  color: #f0e8d0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+  font-family: 'Pretendard', sans-serif;
+}
+.po-card-body {
+  font-size: 10px; color: #8892a4;
+  line-height: 1.45;
+  overflow: hidden;
+  flex: 1;
+  font-family: 'Pretendard', sans-serif;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.po-card-tags {
+  display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px;
+}
+.po-card-tag {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 10px;
+  padding: 1px 5px;
+  font-size: 9px; color: var(--po-accent2);
+  font-family: 'Pretendard', sans-serif;
+  white-space: nowrap;
+}
+.po-card-type-badge {
+  position: absolute; top: 4px; right: 6px;
+  font-size: 8px; font-weight: 700; text-transform: uppercase;
+  opacity: 0.6;
+  font-family: 'Pretendard', sans-serif;
+}
+.po-rel-btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+.po-rel-btn {
+  padding: 5px 11px; border-radius: 20px; font-size: 0.74rem; font-weight: 600;
+  cursor: pointer; border: 1px solid; background: transparent;
+  font-family: 'Pretendard', sans-serif; transition: all 0.12s;
+}
+.po-rel-btn[data-rel="support"]  { border-color: var(--po-support);  color: var(--po-support); }
+.po-rel-btn[data-rel="tension"]  { border-color: var(--po-tension);  color: var(--po-tension); }
+.po-rel-btn[data-rel="compete"]  { border-color: var(--po-compete);  color: var(--po-compete); }
+.po-rel-btn[data-rel="neutral"]  { border-color: var(--po-neutral);  color: var(--po-neutral); }
+.po-rel-btn[data-rel="alliance"] { border-color: var(--po-accent2);  color: var(--po-accent2); }
+.po-rel-btn.sel[data-rel="support"]  { background: rgba(52,211,153,0.14); }
+.po-rel-btn.sel[data-rel="tension"]  { background: rgba(248,113,113,0.14); }
+.po-rel-btn.sel[data-rel="compete"]  { background: rgba(251,146,60,0.14); }
+.po-rel-btn.sel[data-rel="neutral"]  { background: rgba(148,163,184,0.14); }
+.po-rel-btn.sel[data-rel="alliance"] { background: rgba(251,191,36,0.14); }
+
+/* Right panel textarea */
+.field-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 0.83rem;
+  outline: none;
+  transition: border-color 0.18s;
+  resize: vertical;
+  min-height: 80px;
+}
+.field-textarea:focus { border-color: var(--po-accent); }
+.field-textarea.eco:focus { border-color: var(--ec-accent); }
+
+/* ====================================================
+   EDGE PANEL (slide-in from bottom of canvas)
+==================================================== */
+.edge-panel {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(100% + 24px));
+  width: 380px;
+  background: #0b1220;
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 16px 18px 14px;
+  z-index: 40;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04);
+  backdrop-filter: blur(14px);
+  transition: transform 0.22s cubic-bezier(.22,1,.36,1), opacity 0.18s;
+  opacity: 0;
+  pointer-events: none;
+}
+.edge-panel.open {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+.edge-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.edge-panel-title {
+  font-size: 0.72rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.edge-panel-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 0.95rem; padding: 2px 6px; border-radius: 5px;
+  transition: background 0.12s, color 0.12s;
+}
+.edge-panel-close:hover { background: var(--border2); color: var(--text); }
+.edge-panel-nodes {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 13px; flex-wrap: wrap;
+}
+.edge-panel-node {
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 4px 10px;
+  font-size: 0.8rem; font-weight: 600; color: var(--text);
+  max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.edge-panel-arrow { color: var(--muted); font-size: 1.1rem; }
+.edge-panel-body { display: flex; flex-direction: column; gap: 9px; }
+.edge-panel-field { display: flex; align-items: center; gap: 10px; }
+.edge-panel-lbl { font-size: 0.72rem; color: var(--muted); width: 50px; flex-shrink: 0; }
+.edge-panel-actions {
+  display: flex; gap: 8px; margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+.edge-panel-actions .btn-danger-ghost {
+  background: none; border: 1px solid rgba(248,113,113,0.35);
+  color: var(--danger); padding: 6px 12px; border-radius: 7px;
+  font-size: 0.78rem; cursor: pointer; transition: all 0.13s; font-family: inherit;
+}
+.edge-panel-actions .btn-danger-ghost:hover { background: rgba(248,113,113,0.1); border-color: var(--danger); }
+.edge-panel-rel-btns { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+/* OW-specific dir select in edge panel */
+.ep-dir-select {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 7px; padding: 5px 8px;
+  font-size: 0.8rem; font-family: inherit; flex: 1; cursor: pointer;
+}
+.ep-dir-select:focus { border-color: var(--ow-accent); outline: none; }
+.ep-note-input {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 7px; padding: 5px 10px;
+  font-size: 0.8rem; font-family: inherit; flex: 1;
+}
+.ep-note-input:focus { border-color: var(--ow-accent); outline: none; }
+.ep-rate-input {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 7px; padding: 5px 8px;
+  font-size: 0.8rem; font-family: inherit; width: 80px;
+}
+.ep-rate-input:focus { border-color: var(--ow-accent); outline: none; }
+/* edge selected highlight */
+path.edge-sel, polygon.edge-sel-arr {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP NAV
+============================================================ -->
+<div class="topnav">
+  <div class="nav-logo">MindMap Studio <span>β</span></div>
+
+  <div class="tab-switcher">
+    <button class="tab-btn active" data-tab="ow" onclick="switchTab('ow')">
+      🏢 지분 구조도
+    </button>
+    <button class="tab-btn" data-tab="eco" onclick="switchTab('eco')">
+      🌐 산업 생태계
+    </button>
+    <button class="tab-btn" data-tab="po" onclick="switchTab('po')">
+      🌍 정책·국가 지도
+    </button>
+  </div>
+
+  <div class="nav-spacer"></div>
+
+  <!-- SEARCH BAR -->
+  <div class="nav-search" id="navSearchWrap">
+    <span class="nav-search-icon">🔍</span>
+    <input class="nav-search-input" id="navSearchInput" placeholder="회사 검색 (지분+생태계)" autocomplete="off"
+      oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)" onfocus="showSearchDrop()" />
+    <button class="nav-search-clear" id="navSearchClear" onclick="clearSearch()" style="display:none">✕</button>
+  </div>
+  <!-- SEARCH DROPDOWN -->
+  <div class="search-drop" id="searchDrop" style="display:none"></div>
+
+  <div class="nav-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncText">로컬 저장</span>
+    </div>
+    <button class="btn btn-outline btn-sm" id="navExportBtn" onclick="currentExport()">내보내기</button>
+    <button class="btn btn-primary-ow btn-sm" id="navAddBtn" onclick="currentAddNode()">+ 추가</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE: OWNERSHIP
+============================================================ -->
+<div class="page active" id="page-ow">
+  <div class="layout">
+
+    <!-- Sidebar: groups -->
+    <div class="sidebar" id="ow-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">그룹</span>
+        <button class="btn btn-outline btn-sm sidebar-add-btn" onclick="OW.openAddGroup()">＋</button>
+        <button class="sidebar-toggle" onclick="toggleSidebar('ow-sidebar')" title="사이드바 접기">◀</button>
+      </div>
+      <div class="list-scroll" id="ow-groupList">
+        <div class="list-item active-ow" data-gid="all" onclick="OW.selectGroup('all')">
+          <div class="list-dot" style="background:var(--muted)"></div>
+          <div class="list-name">전체 보기</div>
+          <div class="list-count" id="ow-countAll">0</div>
+        </div>
+      </div>
+      <button class="add-list-btn" onclick="OW.openAddGroup()">＋ 그룹 추가</button>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="ow-canvasArea">
+      <div class="toolbar">
+        <button class="tool-btn" onclick="OW.zoomIn()" title="확대">＋</button>
+        <button class="tool-btn" onclick="OW.zoomOut()" title="축소">－</button>
+        <button class="tool-btn" onclick="OW.resetView()" title="초기화">⊙</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn active-ow" id="ow-toolSelect" onclick="OW.setTool('select')" title="선택 (S)">↖</button>
+        <button class="tool-btn" id="ow-toolEdge" onclick="OW.setTool('edge')" title="지분선 (E)">↗</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" onclick="OW.autoLayout()" title="자동 정렬">⊞</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" onclick="IMG.insertImage('ow')" title="이미지 삽입">🖼</button>
+      </div>
+      <input type="file" id="img-file-input" accept="image/*" style="display:none" onchange="IMG._onFileSelected(event)">
+      <svg id="ow-canvas" class="canvas-svg">
+        <defs>
+          <marker id="ow-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0.5 L0,6.5 L7,3.5 z" fill="var(--ow-accent)" opacity="0.95"/>
+          </marker>
+          <marker id="ow-arrow-rev" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0.5 L0,6.5 L7,3.5 z" fill="var(--ow-accent2)" opacity="0.95"/>
+          </marker>
+          <marker id="ow-arrow-mid" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+            <path d="M0,0.5 L0,6.5 L7,3.5 z" fill="var(--ow-accent)" opacity="0.95"/>
+          </marker>
+          <marker id="ow-arrow-mid2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+            <path d="M0,0.5 L0,6.5 L7,3.5 z" fill="var(--ow-accent2)" opacity="0.95"/>
+          </marker>
+        </defs>
+        <g id="ow-zoomGroup">
+          <g id="ow-imageLayer"></g>
+          <g id="ow-edgesLayer"></g>
+          <g id="ow-nodesLayer"></g>
+        </g>
+      </svg>
+      <div class="canvas-hint">스크롤: 확대/축소 &nbsp;|&nbsp; 드래그: 이동 &nbsp;|&nbsp; 우클릭: 메뉴</div>
+
+      <!-- OW Edge Edit Panel -->
+      <div class="edge-panel" id="ow-edgePanel">
+        <div class="edge-panel-header">
+          <span class="edge-panel-title">⟶ 지분 관계 편집</span>
+          <button class="edge-panel-close" onclick="OW.closeEdgePanel()">✕</button>
+        </div>
+        <div class="edge-panel-nodes">
+          <span class="edge-panel-node" id="ow-ep-from">—</span>
+          <span class="edge-panel-arrow">→</span>
+          <span class="edge-panel-node" id="ow-ep-to">—</span>
+        </div>
+        <div class="edge-panel-body">
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">방향</span>
+            <select class="ep-dir-select" id="ow-ep-dir">
+              <option value="from">→ from 기준 (지분 보유)</option>
+              <option value="to">← to 기준 (역방향)</option>
+              <option value="both">↔ 양방향</option>
+            </select>
+          </div>
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">지분율 %</span>
+            <input class="ep-rate-input" id="ow-ep-rate" type="number" min="0" max="100" placeholder="예: 51.2">
+          </div>
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">메모</span>
+            <input class="ep-note-input" id="ow-ep-note" placeholder="예: 직접 보유">
+          </div>
+        </div>
+        <div class="edge-panel-actions">
+          <button class="btn-danger-ghost" onclick="OW._epDelete()">🗑 삭제</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline btn-sm" onclick="OW.closeEdgePanel()">취소</button>
+          <button class="btn btn-primary-ow btn-sm" onclick="OW._epSave()">저장</button>
+        </div>
+      </div>
+
+      <!-- Node type legend -->
+      <div class="ow-legend">
+        <div class="legend-title">노드 유형</div>
+        <div class="legend-item">
+          <svg width="20" height="16"><circle cx="10" cy="8" r="7" fill="none" stroke="#4f8ef7" stroke-width="1.5"/></svg>인물
+        </div>
+        <div class="legend-item">
+          <svg width="20" height="16"><polygon points="10,2 3,14 17,14" fill="none" stroke="#4f8ef7" stroke-width="1.5"/></svg>비상장사
+        </div>
+        <div class="legend-item">
+          <svg width="20" height="16"><rect x="1" y="3" width="18" height="10" rx="2" fill="none" stroke="#f87171" stroke-width="2"/></svg>KOSPI
+        </div>
+        <div class="legend-item">
+          <svg width="20" height="16"><rect x="1" y="3" width="18" height="10" rx="2" fill="none" stroke="#34d399" stroke-width="2"/></svg>KOSDAQ
+        </div>
+      </div>
+      <div class="right-panel" id="ow-rightPanel">
+        <div class="panel-header">
+          <div class="panel-title" id="ow-panelTitle">회사 편집</div>
+          <button class="panel-close" onclick="OW.closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <div class="field-group">
+            <div class="field-label">회사명 *</div>
+            <input class="field-input" id="ow-p_name" placeholder="(주)삼성전자">
+          </div>
+          <div class="field-group">
+            <div class="field-label">노드 유형</div>
+            <select class="field-input" id="ow-p_nodeType">
+              <option value="unlisted">△ 비상장사</option>
+              <option value="kospi">🟥 KOSPI (빨간 박스)</option>
+              <option value="kosdaq">🟩 KOSDAQ (초록 박스)</option>
+              <option value="person">⭕ 인물 (원형)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">그룹</div>
+            <select class="field-input" id="ow-p_group"></select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">메모</div>
+            <input class="field-input" id="ow-p_note" placeholder="간단한 설명">
+          </div>
+          <div class="field-group">
+            <div class="field-label">태그</div>
+            <div class="tags-area" id="ow-p_tags"></div>
+            <div class="tag-input-row">
+              <input class="field-input tag-input" id="ow-p_tagInput" placeholder="태그 입력 후 Enter">
+              <button class="btn btn-outline btn-sm" onclick="OW.addPanelTag()">추가</button>
+            </div>
+          </div>
+          <div class="panel-sep"></div>
+          <button class="btn btn-primary-ow btn-full" onclick="OW.saveNodePanel()">💾 저장</button>
+          <button class="btn btn-outline btn-danger btn-full" onclick="OW.deleteCurrentNode()">🗑 삭제</button>
+        </div>
+      </div>
+
+    </div><!-- /canvas-area -->
+
+  </div><!-- /layout -->
+</div><!-- /page-ow -->
+<div class="page" id="page-eco">
+  <div class="layout">
+
+    <!-- Sidebar: industries -->
+    <div class="sidebar" id="ec-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">산업</span>
+        <button class="btn btn-outline btn-sm sidebar-add-btn" onclick="EC.openAddIndustry()">＋</button>
+        <button class="sidebar-toggle" onclick="toggleSidebar('ec-sidebar')" title="사이드바 접기">◀</button>
+      </div>
+      <div class="list-scroll" id="ec-industryList">
+        <div class="list-item active-ec" data-iid="all" onclick="EC.selectIndustry('all')">
+          <div class="list-icon">🌏</div>
+          <div class="list-name">전체 보기</div>
+          <div class="list-count" id="ec-countAll">0</div>
+        </div>
+      </div>
+      <button class="add-list-btn eco" onclick="EC.openAddIndustry()">＋ 산업 추가</button>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="ec-canvasArea">
+      <!-- Legend -->
+      <div class="eco-legend">
+        <div class="legend-title">관계 유형</div>
+        <div class="legend-item">
+          <div class="legend-line" style="background:var(--ec-collab)"></div>협력
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="background:var(--ec-compete);
+            background: repeating-linear-gradient(90deg,var(--ec-compete) 0,var(--ec-compete) 5px,transparent 5px,transparent 9px)">
+          </div>경쟁
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="background:var(--ec-invest)"></div>투자
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="background:var(--ec-neutral);opacity:0.6"></div>중립
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="tool-btn" onclick="EC.zoomIn()">＋</button>
+        <button class="tool-btn" onclick="EC.zoomOut()">－</button>
+        <button class="tool-btn" onclick="EC.resetView()">⊙</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn active-ec" id="ec-toolSelect" onclick="EC.setTool('select')">↖</button>
+        <button class="tool-btn" id="ec-toolEdge" onclick="EC.setTool('edge')">↗</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="ec-clusterBtn" onclick="EC.toggleClusters()" title="클러스터 표시">⬡</button>
+        <button class="tool-btn" onclick="EC.autoLayout()">⊞</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" onclick="IMG.insertImage('ec')" title="이미지 삽입">🖼</button>
+      </div>
+
+      <svg id="ec-canvas" class="canvas-svg">
+        <defs>
+          <marker id="ec-arr-collab"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#22d3ee"/></marker>
+          <marker id="ec-arr-compete" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#f97316"/></marker>
+          <marker id="ec-arr-invest"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#a78bfa"/></marker>
+          <marker id="ec-arr-neutral" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#94a3b8"/></marker>
+          <filter id="ec-glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="ec-zoomGroup">
+          <g id="ec-imageLayer"></g>
+          <g id="ec-clustersLayer"></g>
+          <g id="ec-edgesLayer"></g>
+          <g id="ec-nodesLayer"></g>
+        </g>
+      </svg>
+      <div class="canvas-hint">스크롤: 확대/축소 &nbsp;|&nbsp; 드래그: 이동 &nbsp;|&nbsp; 우클릭: 메뉴</div>
+
+      <!-- EC Edge Edit Panel -->
+      <div class="edge-panel" id="ec-edgePanel">
+        <div class="edge-panel-header">
+          <span class="edge-panel-title">⟶ 관계 편집</span>
+          <button class="edge-panel-close" onclick="EC.closeEdgePanel()">✕</button>
+        </div>
+        <div class="edge-panel-nodes">
+          <span class="edge-panel-node" id="ec-ep-from">—</span>
+          <span class="edge-panel-arrow">→</span>
+          <span class="edge-panel-node" id="ec-ep-to">—</span>
+        </div>
+        <div class="edge-panel-body">
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">관계유형</span>
+            <div class="edge-panel-rel-btns" id="ec-ep-relBtns">
+              <button class="rel-btn" data-rel="collab"  onclick="EC._epSelRel(this)" style="border-color:var(--ec-collab);color:var(--ec-collab)">협력</button>
+              <button class="rel-btn" data-rel="compete" onclick="EC._epSelRel(this)" style="border-color:var(--ec-compete);color:var(--ec-compete)">경쟁</button>
+              <button class="rel-btn" data-rel="invest"  onclick="EC._epSelRel(this)" style="border-color:var(--ec-invest);color:var(--ec-invest)">투자</button>
+              <button class="rel-btn" data-rel="neutral" onclick="EC._epSelRel(this)" style="border-color:var(--ec-neutral);color:var(--ec-neutral)">중립</button>
+            </div>
+          </div>
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">설명</span>
+            <input class="ep-note-input" id="ec-ep-note" placeholder="예: 공동 연구개발">
+          </div>
+        </div>
+        <div class="edge-panel-actions">
+          <button class="btn-danger-ghost" onclick="EC._epDelete()">🗑 삭제</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline btn-sm" onclick="EC.closeEdgePanel()">취소</button>
+          <button class="btn btn-primary-ec btn-sm" onclick="EC._epSave()">저장</button>
+        </div>
+      </div>
+
+      <!-- Right panel overlays canvas -->
+      <div class="right-panel" id="ec-rightPanel">
+        <div class="panel-header">
+          <div class="panel-title" id="ec-panelTitle">기업 편집</div>
+          <button class="panel-close" onclick="EC.closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <div class="field-group">
+            <div class="field-label">기업명 *</div>
+            <input class="field-input eco" id="ec-p_name" placeholder="삼성전자">
+          </div>
+          <div class="field-group">
+            <div class="field-label">산업</div>
+            <select class="field-input eco" id="ec-p_industry"></select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">클러스터 그룹 (같은 값끼리 묶음)</div>
+            <input class="field-input eco" id="ec-p_cluster" placeholder="예: 반도체 밸류체인">
+          </div>
+          <div class="field-group">
+            <div class="field-label">역할 / 설명</div>
+            <input class="field-input eco" id="ec-p_role" placeholder="예: 파운드리 1위">
+          </div>
+          <div class="field-group">
+            <div class="field-label">태그</div>
+            <div class="tags-area" id="ec-p_tags"></div>
+            <div class="tag-input-row">
+              <input class="field-input eco tag-input" id="ec-p_tagInput" placeholder="태그 입력 후 Enter">
+              <button class="btn btn-outline btn-sm" onclick="EC.addPanelTag()">추가</button>
+            </div>
+          </div>
+          <div class="panel-sep"></div>
+          <button class="btn btn-primary-ec btn-full" onclick="EC.saveNodePanel()">💾 저장</button>
+          <button class="btn btn-outline btn-danger btn-full" onclick="EC.deleteCurrentNode()">🗑 삭제</button>
+        </div>
+      </div>
+
+    </div><!-- /canvas-area -->
+
+  </div><!-- /layout -->
+</div><!-- /page-eco -->
+
+<!-- ============================================================
+     PAGE: POLICY / GEO MAP
+============================================================ -->
+<div class="page" id="page-po">
+  <div class="layout">
+
+    <!-- Sidebar: regions -->
+    <div class="sidebar" id="po-sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">지역·섹터</span>
+        <button class="btn btn-outline btn-sm sidebar-add-btn" style="border-color:var(--po-accent);color:var(--po-accent)" onclick="PO.openAddRegion()">＋</button>
+        <button class="sidebar-toggle" onclick="toggleSidebar('po-sidebar')" title="사이드바 접기">◀</button>
+      </div>
+      <div class="list-scroll" id="po-regionList">
+        <div class="list-item active-po" data-rid="all" onclick="PO.selectRegion('all')">
+          <div class="list-icon">🌍</div>
+          <div class="list-name">전체 보기</div>
+          <div class="list-count" id="po-countAll">0</div>
+        </div>
+      </div>
+      <button class="add-list-btn" style="border-color:var(--po-accent);color:var(--po-accent)" onclick="PO.openAddRegion()">＋ 지역/섹터 추가</button>
+    </div>
+
+    <!-- Canvas -->
+    <div class="canvas-area" id="po-canvasArea">
+
+      <!-- Legend -->
+      <div class="po-legend">
+        <div class="legend-title">관계 유형</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--po-support)"></div>지원·협력</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--po-tension);background:repeating-linear-gradient(90deg,var(--po-tension) 0,var(--po-tension) 5px,transparent 5px,transparent 9px)"></div>긴장·갈등</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--po-compete)"></div>경쟁·견제</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--po-accent2)"></div>동맹·협약</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--po-neutral);opacity:0.6"></div>중립</div>
+      </div>
+
+      <div class="toolbar">
+        <button class="tool-btn" onclick="PO.zoomIn()">＋</button>
+        <button class="tool-btn" onclick="PO.zoomOut()">－</button>
+        <button class="tool-btn" onclick="PO.resetView()">⊙</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="po-toolSelect" onclick="PO.setTool('select')" title="선택">↖</button>
+        <button class="tool-btn" id="po-toolEdge"   onclick="PO.setTool('edge')"   title="관계선 연결">↗</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="po-clusterBtn" onclick="PO.toggleClusters()" title="그룹 표시">⬡</button>
+        <button class="tool-btn" onclick="PO.autoLayout()" title="자동 정렬">⊞</button>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" onclick="IMG.insertImage('po')" title="이미지 삽입">🖼</button>
+      </div>
+
+      <svg id="po-canvas" class="canvas-svg">
+        <defs>
+          <marker id="po-arr-support"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#34d399"/></marker>
+          <marker id="po-arr-tension"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#f87171"/></marker>
+          <marker id="po-arr-compete"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#fb923c"/></marker>
+          <marker id="po-arr-neutral"  markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#94a3b8"/></marker>
+          <marker id="po-arr-alliance" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0.5 L0,6.5 L7,3.5 z" fill="#fbbf24"/></marker>
+          <filter id="po-glow">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="po-zoomGroup">
+          <g id="po-imageLayer"></g>
+          <g id="po-clustersLayer"></g>
+          <g id="po-edgesLayer"></g>
+          <g id="po-nodesLayer"></g>
+        </g>
+      </svg>
+      <div class="canvas-hint">스크롤: 확대/축소 &nbsp;|&nbsp; 드래그: 이동 &nbsp;|&nbsp; 우클릭: 메뉴 &nbsp;|&nbsp; 카드 클릭: 편집</div>
+
+      <!-- PO Edge Edit Panel -->
+      <div class="edge-panel" id="po-edgePanel">
+        <div class="edge-panel-header">
+          <span class="edge-panel-title">⟶ 관계 편집</span>
+          <button class="edge-panel-close" onclick="PO.closeEdgePanel()">✕</button>
+        </div>
+        <div class="edge-panel-nodes">
+          <span class="edge-panel-node" id="po-ep-from">—</span>
+          <span class="edge-panel-arrow">→</span>
+          <span class="edge-panel-node" id="po-ep-to">—</span>
+        </div>
+        <div class="edge-panel-body">
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">관계유형</span>
+            <div class="edge-panel-rel-btns" id="po-ep-relBtns">
+              <button class="po-rel-btn" data-rel="support"  onclick="PO._epSelRel(this)">지원</button>
+              <button class="po-rel-btn" data-rel="tension"  onclick="PO._epSelRel(this)">긴장</button>
+              <button class="po-rel-btn" data-rel="compete"  onclick="PO._epSelRel(this)">경쟁</button>
+              <button class="po-rel-btn" data-rel="alliance" onclick="PO._epSelRel(this)">동맹</button>
+              <button class="po-rel-btn" data-rel="neutral"  onclick="PO._epSelRel(this)">중립</button>
+            </div>
+          </div>
+          <div class="edge-panel-field">
+            <span class="edge-panel-lbl">설명</span>
+            <input class="ep-note-input" id="po-ep-note" placeholder="예: 반도체 수출규제">
+          </div>
+        </div>
+        <div class="edge-panel-actions">
+          <button class="btn-danger-ghost" onclick="PO._epDelete()">🗑 삭제</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline btn-sm" onclick="PO.closeEdgePanel()">취소</button>
+          <button class="btn btn-primary-po btn-sm" onclick="PO._epSave()">저장</button>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right-panel" id="po-rightPanel">
+        <div class="panel-header">
+          <div class="panel-title" id="po-panelTitle">카드 편집</div>
+          <button class="panel-close" onclick="PO.closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <div class="field-group">
+            <div class="field-label">제목 *</div>
+            <input class="field-input" id="po-p_title" placeholder="예: 미국 반도체법 CHIPS Act" style="border-color:var(--po-accent)">
+          </div>
+          <div class="field-group">
+            <div class="field-label">카드 유형</div>
+            <select class="field-input" id="po-p_type" style="border-color:var(--po-accent)">
+              <option value="policy">📋 정책·법안</option>
+              <option value="country">🌏 국가·기관</option>
+              <option value="agenda">📌 아젠다·이슈</option>
+              <option value="industry">🏭 국가주도산업</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">지역·섹터</div>
+            <select class="field-input" id="po-p_region" style="border-color:var(--po-accent)"></select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">클러스터 그룹</div>
+            <input class="field-input" id="po-p_cluster" placeholder="예: 미국 대중국 견제">
+          </div>
+          <div class="field-group">
+            <div class="field-label">본문 내용 (뉴스·스크랩·메모)</div>
+            <textarea class="field-textarea" id="po-p_body" placeholder="정책 내용, 최신 동향, 핵심 요약을 자유롭게 작성..."></textarea>
+          </div>
+          <div class="field-group">
+            <div class="field-label">출처 / URL</div>
+            <input class="field-input" id="po-p_source" placeholder="https://...">
+          </div>
+          <div class="field-group">
+            <div class="field-label">태그</div>
+            <div class="tags-area" id="po-p_tags"></div>
+            <div class="tag-input-row">
+              <input class="field-input tag-input" id="po-p_tagInput" placeholder="태그 입력 후 Enter">
+              <button class="btn btn-outline btn-sm" onclick="PO.addPanelTag()">추가</button>
+            </div>
+          </div>
+          <div class="panel-sep"></div>
+          <button class="btn btn-primary-po btn-full" onclick="PO.saveNodePanel()">💾 저장</button>
+          <button class="btn btn-outline btn-danger btn-full" onclick="PO.deleteCurrentNode()">🗑 삭제</button>
+        </div>
+      </div>
+
+    </div><!-- /canvas-area -->
+  </div><!-- /layout -->
+</div><!-- /page-po -->
+
+<!-- ============================================================
+     CONTEXT MENU (shared, content swapped by JS)
+============================================================ -->
+<div class="ctx-menu" id="ctxMenu"></div>
+
+<!-- ============================================================
+     COMPANY POPUP (shared)
+============================================================ -->
+<div class="company-popup" id="companyPopup">
+  <div class="popup-header">
+    <div>
+      <div class="popup-company" id="pp_name"></div>
+      <div class="popup-sub" id="pp_sub"></div>
+    </div>
+    <button class="popup-close" onclick="closePopup()">✕</button>
+  </div>
+  <div class="popup-note" id="pp_note"></div>
+  <div class="popup-tags" id="pp_tags"></div>
+  <div class="popup-actions" id="pp_actions"></div>
+  <div id="pp_crossLinks"></div>
+</div>
+
+<!-- ============================================================
+     MODALS: OWNERSHIP
+============================================================ -->
+
+<!-- Add/Edit Group -->
+<div class="modal-overlay" id="ow-modalGroup">
+  <div class="modal-box">
+    <div class="modal-title" id="ow-modalGroupTitle">그룹 추가</div>
+    <div class="modal-sub">새 그룹을 생성합니다</div>
+    <div class="field-group">
+      <div class="field-label">그룹명 *</div>
+      <input class="field-input" id="ow-m_groupName" placeholder="삼성 그룹">
+    </div>
+    <div class="field-group">
+      <div class="field-label">색상</div>
+      <input type="color" id="ow-m_groupColor" value="#4f8ef7"
+        style="width:100%;height:42px;border:1px solid var(--border2);border-radius:8px;background:transparent;cursor:pointer;padding:2px;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ow-modalGroup')">취소</button>
+      <button class="btn btn-primary-ow" onclick="OW.saveGroup()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Node -->
+<div class="modal-overlay" id="ow-modalNode">
+  <div class="modal-box">
+    <div class="modal-title">회사 추가</div>
+    <div class="modal-sub">지분 구조에 새 회사를 추가합니다</div>
+    <div class="field-group">
+      <div class="field-label">회사명 *</div>
+      <input class="field-input" id="ow-m_nodeName" placeholder="(주)삼성전자">
+    </div>
+    <div class="field-group">
+      <div class="field-label">노드 유형</div>
+      <select class="field-input" id="ow-m_nodeType">
+        <option value="unlisted">△ 비상장사</option>
+        <option value="kospi">🟥 KOSPI</option>
+        <option value="kosdaq">🟩 KOSDAQ</option>
+        <option value="person">⭕ 인물</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">그룹</div>
+      <select class="field-input" id="ow-m_nodeGroup"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ow-modalNode')">취소</button>
+      <button class="btn btn-primary-ow" onclick="OW.saveNewNode()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Edge -->
+<div class="modal-overlay" id="ow-modalEdge">
+  <div class="modal-box">
+    <div class="modal-title">지분 연결</div>
+    <div class="modal-sub"><span id="ow-edgeFromName" style="color:var(--ow-accent);font-weight:600"></span> 의 지분 연결</div>
+    <div class="field-group">
+      <div class="field-label">대상 회사</div>
+      <select class="field-input" id="ow-m_edgeTo"></select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">지분율 (%)</div>
+      <input class="field-input" id="ow-m_edgeRate" type="number" min="0" max="100" step="0.1" placeholder="51.0">
+    </div>
+    <div class="field-group">
+      <div class="field-label">방향</div>
+      <select class="field-input" id="ow-m_edgeDir">
+        <option value="from">→ 선택 회사가 대상에 출자</option>
+        <option value="to">← 대상이 선택 회사에 출자</option>
+        <option value="both">↔ 상호 지분</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ow-modalEdge')">취소</button>
+      <button class="btn btn-primary-ow" onclick="OW.saveEdge()">연결</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Edge (Ownership) -->
+<div class="modal-overlay" id="ow-modalEdgeEdit">
+  <div class="modal-box">
+    <div class="modal-title">지분 연결 편집</div>
+    <div class="modal-sub"><span id="ow-editEdgeLabel" style="color:var(--ow-accent);font-weight:600"></span></div>
+    <div class="field-group">
+      <div class="field-label">지분율 (%)</div>
+      <input class="field-input" id="ow-ee_rate" type="number" min="0" max="100" step="0.1" placeholder="51.0">
+    </div>
+    <div class="field-group">
+      <div class="field-label">방향</div>
+      <select class="field-input" id="ow-ee_dir">
+        <option value="from">→ 출발 회사가 대상에 출자</option>
+        <option value="to">← 대상이 출발 회사에 출자</option>
+        <option value="both">↔ 상호 지분</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">메모</div>
+      <input class="field-input" id="ow-ee_note" placeholder="예: 계열사 지분">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-danger" onclick="OW._deleteEditingEdge()">🗑 삭제</button>
+      <button class="btn btn-outline" onclick="closeModal('ow-modalEdgeEdit')">취소</button>
+      <button class="btn btn-primary-ow" onclick="OW._saveEditEdge()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS: ECOSYSTEM
+============================================================ -->
+
+<!-- Add Industry -->
+<div class="modal-overlay" id="ec-modalInd">
+  <div class="modal-box">
+    <div class="modal-title">산업 추가</div>
+    <div class="modal-sub">새 산업 카테고리를 생성합니다</div>
+    <div class="field-group">
+      <div class="field-label">산업명 *</div>
+      <input class="field-input eco" id="ec-m_indName" placeholder="반도체" oninput="EC._suggestEmojiPreview()">
+    </div>
+    <div class="field-group">
+      <div class="field-label">아이콘 (이모지)</div>
+      <input class="field-input eco" id="ec-m_indIcon" placeholder="💻" maxlength="4">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ec-modalInd')">취소</button>
+      <button class="btn btn-primary-ec" onclick="EC.saveIndustry()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Node -->
+<div class="modal-overlay" id="ec-modalNode">
+  <div class="modal-box">
+    <div class="modal-title">기업 추가</div>
+    <div class="modal-sub">산업 생태계에 새 기업을 추가합니다</div>
+    <div class="field-group">
+      <div class="field-label">기업명 *</div>
+      <input class="field-input eco" id="ec-m_nodeName" placeholder="삼성전자">
+    </div>
+    <div class="field-group">
+      <div class="field-label">산업</div>
+      <select class="field-input eco" id="ec-m_nodeInd"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ec-modalNode')">취소</button>
+      <button class="btn btn-primary-ec" onclick="EC.saveNewNode()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Edge -->
+<div class="modal-overlay" id="ec-modalEdge">
+  <div class="modal-box">
+    <div class="modal-title">관계 연결</div>
+    <div class="modal-sub"><span id="ec-edgeFromName" style="color:var(--ec-accent);font-weight:600"></span> 의 관계 설정</div>
+    <div class="field-group">
+      <div class="field-label">대상 기업</div>
+      <select class="field-input eco" id="ec-m_edgeTo"></select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">관계 유형</div>
+      <div class="rel-btn-group" id="ec-relBtns">
+        <button class="rel-btn sel" data-rel="collab"  onclick="EC.selectRel(this)">협력</button>
+        <button class="rel-btn"     data-rel="compete" onclick="EC.selectRel(this)">경쟁</button>
+        <button class="rel-btn"     data-rel="invest"  onclick="EC.selectRel(this)">투자</button>
+        <button class="rel-btn"     data-rel="neutral" onclick="EC.selectRel(this)">중립</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">설명 (선택)</div>
+      <input class="field-input eco" id="ec-m_edgeNote" placeholder="파트너십, 라이선스 계약 등">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('ec-modalEdge')">취소</button>
+      <button class="btn btn-primary-ec" onclick="EC.saveEdge()">연결</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Edge (Ecosystem) -->
+<div class="modal-overlay" id="ec-modalEdgeEdit">
+  <div class="modal-box">
+    <div class="modal-title">관계 편집</div>
+    <div class="modal-sub"><span id="ec-editEdgeLabel" style="color:var(--ec-accent);font-weight:600"></span></div>
+    <div class="field-group">
+      <div class="field-label">관계 유형</div>
+      <div class="rel-btn-group" id="ec-editRelBtns">
+        <button class="rel-btn sel" data-rel="collab"  onclick="EC._selectEditRel(this)">협력</button>
+        <button class="rel-btn"     data-rel="compete" onclick="EC._selectEditRel(this)">경쟁</button>
+        <button class="rel-btn"     data-rel="invest"  onclick="EC._selectEditRel(this)">투자</button>
+        <button class="rel-btn"     data-rel="neutral" onclick="EC._selectEditRel(this)">중립</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">설명</div>
+      <input class="field-input eco" id="ec-ee_note" placeholder="파트너십, 라이선스 계약 등">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-danger" onclick="EC._deleteEditingEdge()">🗑 삭제</button>
+      <button class="btn btn-outline" onclick="closeModal('ec-modalEdgeEdit')">취소</button>
+      <button class="btn btn-primary-ec" onclick="EC._saveEditEdge()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODALS: POLICY / GEO
+============================================================ -->
+
+<!-- Add Region/Sector -->
+<div class="modal-overlay" id="po-modalRegion">
+  <div class="modal-box">
+    <div class="modal-title" id="po-modalRegionTitle">지역·섹터 추가</div>
+    <div class="modal-sub">새 지역 또는 주제 섹터를 생성합니다</div>
+    <div class="field-group">
+      <div class="field-label">이름 *</div>
+      <input class="field-input" id="po-m_regionName" placeholder="미국 / 동아시아 / 에너지안보">
+    </div>
+    <div class="field-group">
+      <div class="field-label">아이콘</div>
+      <input class="field-input" id="po-m_regionIcon" placeholder="🇺🇸" maxlength="4">
+    </div>
+    <div class="field-group">
+      <div class="field-label">색상</div>
+      <input type="color" id="po-m_regionColor" value="#f59e0b"
+        style="width:100%;height:42px;border:1px solid var(--border2);border-radius:8px;background:transparent;cursor:pointer;padding:2px;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('po-modalRegion')">취소</button>
+      <button class="btn btn-primary-po" onclick="PO.saveRegion()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Node/Card -->
+<div class="modal-overlay" id="po-modalNode">
+  <div class="modal-box">
+    <div class="modal-title">카드 추가</div>
+    <div class="modal-sub">정책·국가·아젠다 카드를 추가합니다</div>
+    <div class="field-group">
+      <div class="field-label">제목 *</div>
+      <input class="field-input" id="po-m_nodeTitle" placeholder="예: 미국 IRA 인플레이션 감축법">
+    </div>
+    <div class="field-group">
+      <div class="field-label">카드 유형</div>
+      <select class="field-input" id="po-m_nodeType">
+        <option value="policy">📋 정책·법안</option>
+        <option value="country">🌏 국가·기관</option>
+        <option value="agenda">📌 아젠다·이슈</option>
+        <option value="industry">🏭 국가주도산업</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">지역·섹터</div>
+      <select class="field-input" id="po-m_nodeRegion"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('po-modalNode')">취소</button>
+      <button class="btn btn-primary-po" onclick="PO.saveNewNode()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Edge -->
+<div class="modal-overlay" id="po-modalEdge">
+  <div class="modal-box">
+    <div class="modal-title">관계 연결</div>
+    <div class="modal-sub"><span id="po-edgeFromName" style="color:var(--po-accent);font-weight:600"></span> 의 관계 설정</div>
+    <div class="field-group">
+      <div class="field-label">대상 카드</div>
+      <select class="field-input" id="po-m_edgeTo"></select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">관계 유형</div>
+      <div class="po-rel-btn-group" id="po-relBtns">
+        <button class="po-rel-btn sel" data-rel="support"  onclick="PO.selectRel(this)">지원·협력</button>
+        <button class="po-rel-btn"     data-rel="tension"  onclick="PO.selectRel(this)">긴장·갈등</button>
+        <button class="po-rel-btn"     data-rel="compete"  onclick="PO.selectRel(this)">경쟁·견제</button>
+        <button class="po-rel-btn"     data-rel="alliance" onclick="PO.selectRel(this)">동맹·협약</button>
+        <button class="po-rel-btn"     data-rel="neutral"  onclick="PO.selectRel(this)">중립</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">설명</div>
+      <input class="field-input" id="po-m_edgeNote" placeholder="예: 반도체 수출규제, FTA 등">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('po-modalEdge')">취소</button>
+      <button class="btn btn-primary-po" onclick="PO.saveEdge()">연결</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Edge -->
+<div class="modal-overlay" id="po-modalEdgeEdit">
+  <div class="modal-box">
+    <div class="modal-title">관계 편집</div>
+    <div class="modal-sub"><span id="po-editEdgeLabel" style="color:var(--po-accent);font-weight:600"></span></div>
+    <div class="field-group">
+      <div class="field-label">관계 유형</div>
+      <div class="po-rel-btn-group" id="po-editRelBtns">
+        <button class="po-rel-btn sel" data-rel="support"  onclick="PO._selectEditRel(this)">지원·협력</button>
+        <button class="po-rel-btn"     data-rel="tension"  onclick="PO._selectEditRel(this)">긴장·갈등</button>
+        <button class="po-rel-btn"     data-rel="compete"  onclick="PO._selectEditRel(this)">경쟁·견제</button>
+        <button class="po-rel-btn"     data-rel="alliance" onclick="PO._selectEditRel(this)">동맹·협약</button>
+        <button class="po-rel-btn"     data-rel="neutral"  onclick="PO._selectEditRel(this)">중립</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">설명</div>
+      <input class="field-input" id="po-ee_note" placeholder="관계 설명">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-danger" onclick="PO._deleteEditingEdge()">🗑 삭제</button>
+      <button class="btn btn-outline" onclick="closeModal('po-modalEdgeEdit')">취소</button>
+      <button class="btn btn-primary-po" onclick="PO._saveEditEdge()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+'use strict';
+
+// ──────────────────────────────────────────────
+// Globals & helpers
+// ──────────────────────────────────────────────
+const RESEARCH_BASE = 'https://bpaek961025-lab.github.io/research-platform/';
+let currentTab = 'ow';
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,6); }
+
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  setTimeout(() => { el.classList.add('open'); }, 0);
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+}
+
+function closePopup() {
+  document.getElementById('companyPopup').style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const ctx = document.getElementById('ctxMenu');
+  if (ctx && !ctx.contains(e.target)) ctx.style.display = 'none';
+  // hide search drop if click outside
+  const drop = document.getElementById('searchDrop');
+  const wrap = document.getElementById('navSearchWrap');
+  if (drop && wrap && !wrap.contains(e.target) && !drop.contains(e.target)) {
+    drop.style.display = 'none';
+  }
+});
+
+// Tab switching
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('page-ow').classList.toggle('active', tab === 'ow');
+  document.getElementById('page-eco').classList.toggle('active', tab === 'eco');
+  document.getElementById('page-po').classList.toggle('active',  tab === 'po');
+  const addBtn = document.getElementById('navAddBtn');
+  if (tab === 'ow')  { addBtn.className = 'btn btn-sm btn-primary-ow'; addBtn.textContent = '+ 회사 추가'; }
+  if (tab === 'eco') { addBtn.className = 'btn btn-sm btn-primary-ec'; addBtn.textContent = '+ 기업 추가'; }
+  if (tab === 'po')  { addBtn.className = 'btn btn-sm btn-primary-po'; addBtn.textContent = '+ 카드 추가'; }
+  closePopup();
+}
+
+// Sidebar collapse
+function toggleSidebar(id) {
+  const sb = document.getElementById(id);
+  const collapsed = sb.classList.toggle('collapsed');
+  const btn = sb.querySelector('.sidebar-toggle');
+  btn.textContent = collapsed ? '▶' : '◀';
+  btn.title = collapsed ? '사이드바 열기' : '사이드바 접기';
+}
+
+function currentAddNode()  { if(currentTab==='ow') OW.openAddNode(); else if(currentTab==='eco') EC.openAddNode(); else PO.openAddNode(); }
+function currentExport()   { if(currentTab==='ow') OW.exportData(); else if(currentTab==='eco') EC.exportData(); else PO.exportData(); }
+
+// ──────────────────────────────────────────────
+// Local save helpers
+// ──────────────────────────────────────────────
+function loadLS(key, def) {
+  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; } catch(e) { return def; }
+}
+function saveLS(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+}
+
+// ──────────────────────────────────────────────
+// SEARCH
+// ──────────────────────────────────────────────
+let searchKbIdx = -1;
+
+function onSearchInput(val) {
+  const clr = document.getElementById('navSearchClear');
+  clr.style.display = val ? 'block' : 'none';
+  if (!val.trim()) { document.getElementById('searchDrop').style.display = 'none'; return; }
+  buildSearchDrop(val.trim());
+}
+
+function showSearchDrop() {
+  const val = document.getElementById('navSearchInput').value.trim();
+  if (val) buildSearchDrop(val);
+}
+
+function clearSearch() {
+  document.getElementById('navSearchInput').value = '';
+  document.getElementById('navSearchClear').style.display = 'none';
+  document.getElementById('searchDrop').style.display = 'none';
+  searchKbIdx = -1;
+}
+
+function buildSearchDrop(q) {
+  const lq = q.toLowerCase();
+  const owState = loadLS('ow_data', { groups:[], nodes:[], edges:[] });
+  const ecState = loadLS('ec_data', { industries:[], nodes:[], edges:[] });
+  const poState = loadLS('po_data', { regions:[], nodes:[], edges:[] });
+
+  // match by name OR tags
+  const owResults = (owState.nodes||[]).filter(n =>
+    n.name.toLowerCase().includes(lq) ||
+    (n.tags||[]).some(t => t.toLowerCase().includes(lq))
+  );
+  const ecResults = (ecState.nodes||[]).filter(n =>
+    n.name.toLowerCase().includes(lq) ||
+    (n.tags||[]).some(t => t.toLowerCase().includes(lq))
+  );
+  const poResults = (poState.nodes||[]).filter(n =>
+    (n.title||'').toLowerCase().includes(lq) ||
+    (n.body||'').toLowerCase().includes(lq) ||
+    (n.tags||[]).some(t => t.toLowerCase().includes(lq))
+  );
+
+  const drop = document.getElementById('searchDrop');
+  drop.innerHTML = '';
+  searchKbIdx = -1;
+
+  if (!owResults.length && !ecResults.length && !poResults.length) {
+    drop.innerHTML = `<div class="search-empty">검색 결과 없음</div>`;
+    drop.style.display = 'block';
+    positionSearchDrop();
+    return;
+  }
+
+  if (owResults.length) {
+    const hdr = document.createElement('div');
+    hdr.className = 'search-section-hdr';
+    hdr.textContent = '🏢 지분 구조도';
+    drop.appendChild(hdr);
+    owResults.forEach(n => {
+      const g = (owState.groups||[]).find(g => g.id === n.groupId);
+      const matchedTag = (n.tags||[]).find(t => t.toLowerCase().includes(lq));
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      item.dataset.type = 'ow';
+      item.dataset.nid = n.id;
+      item.dataset.gid = n.groupId || '';
+      item.innerHTML = `
+        <div class="search-dot" style="background:${g ? g.color : '#64748b'}"></div>
+        <div class="search-item-name">${highlightMatch(n.name, q)}${matchedTag && !n.name.toLowerCase().includes(lq) ? `<span style="font-size:0.7rem;color:var(--muted);margin-left:5px">#${matchedTag}</span>` : ''}</div>
+        <div class="search-item-meta">${g ? g.name : '미분류'}</div>
+        <div class="search-badge ow">지분</div>`;
+      item.onclick = () => jumpToSearchResult('ow', n.id, n.groupId);
+      drop.appendChild(item);
+    });
+  }
+
+  if (ecResults.length) {
+    const hdr = document.createElement('div');
+    hdr.className = 'search-section-hdr';
+    hdr.textContent = '🌐 산업 생태계';
+    drop.appendChild(hdr);
+    ecResults.forEach(n => {
+      const ind = (ecState.industries||[]).find(i => i.id === n.industryId);
+      const matchedTag = (n.tags||[]).find(t => t.toLowerCase().includes(lq));
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      item.dataset.type = 'ec';
+      item.dataset.nid = n.id;
+      item.dataset.iid = n.industryId || '';
+      item.innerHTML = `
+        <div class="search-dot" style="background:var(--ec-accent)"></div>
+        <div class="search-item-name">${highlightMatch(n.name, q)}${matchedTag && !n.name.toLowerCase().includes(lq) ? `<span style="font-size:0.7rem;color:var(--muted);margin-left:5px">#${matchedTag}</span>` : ''}</div>
+        <div class="search-item-meta">${ind ? (ind.icon||'') + ' ' + ind.name : '미분류'}</div>
+        <div class="search-badge ec">생태계</div>`;
+      item.onclick = () => jumpToSearchResult('ec', n.id, n.industryId);
+      drop.appendChild(item);
+    });
+  }
+
+  if (poResults.length) {
+    const hdr = document.createElement('div');
+    hdr.className = 'search-section-hdr';
+    hdr.textContent = '🌍 정책·국가 지도';
+    drop.appendChild(hdr);
+    poResults.forEach(n => {
+      const reg = (poState.regions||[]).find(r => r.id === n.regionId);
+      const matchedTag = (n.tags||[]).find(t => t.toLowerCase().includes(lq));
+      const item = document.createElement('div');
+      item.className = 'search-item';
+      item.innerHTML = `
+        <div class="search-dot" style="background:var(--po-accent)"></div>
+        <div class="search-item-name">${highlightMatch(n.title||'', q)}${matchedTag ? `<span style="font-size:0.7rem;color:var(--muted);margin-left:5px">#${matchedTag}</span>` : ''}</div>
+        <div class="search-item-meta">${reg ? (reg.icon||'')+(reg.name) : '미분류'}</div>
+        <div class="search-badge" style="background:rgba(245,158,11,0.15);color:var(--po-accent)">정책</div>`;
+      item.onclick = () => { clearSearch(); switchTab('po'); setTimeout(()=>PO._flashNode(n.id),120); };
+      drop.appendChild(item);
+    });
+  }
+
+  drop.style.display = 'block';
+  positionSearchDrop();
+}
+
+
+function positionSearchDrop() {
+  const wrap = document.getElementById('navSearchWrap');
+  const drop = document.getElementById('searchDrop');
+  const rect = wrap.getBoundingClientRect();
+  drop.style.left = rect.left + 'px';
+  drop.style.top  = (rect.bottom + 4) + 'px';
+  drop.style.width = Math.max(320, rect.width) + 'px';
+}
+
+function highlightMatch(text, q) {
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx < 0) return text;
+  return text.slice(0, idx) + `<mark style="background:rgba(79,142,247,0.25);color:inherit;border-radius:2px">${text.slice(idx, idx+q.length)}</mark>` + text.slice(idx+q.length);
+}
+
+function jumpToSearchResult(type, nid, catId) {
+  clearSearch();
+  if (type === 'ow') {
+    switchTab('ow');
+    OW.selectGroup(catId || 'all');
+    setTimeout(() => OW._flashNode(nid), 120);
+  } else {
+    switchTab('eco');
+    EC.jumpToIndustry(catId || 'all');
+    setTimeout(() => EC._flashNode(nid), 120);
+  }
+}
+
+function onSearchKey(e) {
+  const drop = document.getElementById('searchDrop');
+  if (drop.style.display === 'none') return;
+  const items = drop.querySelectorAll('.search-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchKbIdx = Math.min(searchKbIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active-kb', i === searchKbIdx));
+    items[searchKbIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchKbIdx = Math.max(searchKbIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active-kb', i === searchKbIdx));
+    items[searchKbIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    if (searchKbIdx >= 0 && items[searchKbIdx]) items[searchKbIdx].click();
+  } else if (e.key === 'Escape') {
+    clearSearch();
+  }
+}
+
+// ──────────────────────────────────────────────
+//  SHARED CANVAS ENGINE
+//  Accepts a config object so both OW & EC can reuse
+// ──────────────────────────────────────────────
+function makeCanvas(cfg) {
+  // cfg: { svgId, zoomGroupId, edgesId, nodesId, clustersId? }
+  const svg   = document.getElementById(cfg.svgId);
+  const zg    = document.getElementById(cfg.zoomGroupId);
+
+  let zoom = 1, panX = 0, panY = 0;
+  let isPanning = false, px0 = 0, py0 = 0, ppx = 0, ppy = 0;
+  let dragNid = null, dragOffX = 0, dragOffY = 0, wasDragging = false;
+
+  function applyTransform() {
+    zg.setAttribute('transform', `translate(${panX},${panY}) scale(${zoom})`);
+  }
+
+  svg.addEventListener('mousedown', ev => {
+    const target = ev.target;
+    if (target === svg || target === zg ||
+        target.id === cfg.edgesId || target.id === cfg.nodesId ||
+        (cfg.clustersId && target.id === cfg.clustersId)) {
+      isPanning = true;
+      px0 = ev.clientX; py0 = ev.clientY; ppx = panX; ppy = panY;
+      svg.style.cursor = 'grabbing';
+    }
+  });
+  window.addEventListener('mousemove', ev => {
+    if (isPanning) {
+      panX = ppx + ev.clientX - px0;
+      panY = ppy + ev.clientY - py0;
+      applyTransform();
+    }
+    if (dragNid !== null) {
+      wasDragging = true;
+      const node = cfg.getNode(dragNid);
+      if (node) {
+        node.x = (ev.clientX - dragOffX - panX) / zoom;
+        node.y = (ev.clientY - dragOffY - panY) / zoom;
+        cfg.renderCanvas();
+      }
+    }
+  });
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    svg.style.cursor = 'default';
+    if (dragNid !== null) {
+      cfg.saveState();
+      dragNid = null;
+    }
+  });
+  svg.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const factor = ev.deltaY > 0 ? 0.9 : 1.1;
+    zoom = Math.max(0.15, Math.min(4, zoom * factor));
+    applyTransform();
+  }, { passive: false });
+
+  return {
+    startNodeDrag(ev, nid) {
+      ev.stopPropagation();
+      wasDragging = false;
+      dragNid = nid;
+      const node = cfg.getNode(nid);
+      dragOffX = ev.clientX - (node.x * zoom + panX);
+      dragOffY = ev.clientY - (node.y * zoom + panY);
+    },
+    wasRecentlyDragging() { return wasDragging; },
+    zoomIn()    { zoom = Math.min(4, zoom * 1.2); applyTransform(); },
+    zoomOut()   { zoom = Math.max(0.15, zoom / 1.2); applyTransform(); },
+    resetView() { zoom = 1; panX = 0; panY = 0; applyTransform(); },
+  };
+}
+
+// ──────────────────────────────────────────────
+//  OWNERSHIP MODULE
+// ──────────────────────────────────────────────
+const OW = (() => {
+  let state = { groups: [], nodes: [], edges: [] };
+  let selGroupId = 'all';
+  let currentNodeId = null;
+  let edgeFromId = null;
+  let tool = 'select';
+  let panelTags = [];
+  let _flashNid = null;
+  const GROUP_COLORS = ['#4f8ef7','#a78bfa','#34d399','#fbbf24','#f87171','#38bdf8','#fb923c','#a3e635'];
+
+  // Canvas engine
+  let canvas;
+
+  function saveState() { saveLS('ow_data', state); }
+  function loadState() { state = loadLS('ow_data', { groups:[], nodes:[], edges:[] }); }
+
+  function getNode(nid) { return state.nodes.find(n => n.id === nid); }
+  function getGroupColor(gid) { const g = state.groups.find(g => g.id === gid); return g ? g.color : '#64748b'; }
+  function getGroupName(gid)  { const g = state.groups.find(g => g.id === gid); return g ? g.name : '미분류'; }
+  function visibleNodes() { return selGroupId === 'all' ? state.nodes : state.nodes.filter(n => n.groupId === selGroupId); }
+
+  // ── render sidebar ──
+  function renderSidebar() {
+    const list = document.getElementById('ow-groupList');
+    list.querySelectorAll('[data-gid]:not([data-gid="all"])').forEach(el => el.remove());
+    document.getElementById('ow-countAll').textContent = state.nodes.length;
+    list.querySelector('[data-gid="all"]').className = 'list-item' + (selGroupId === 'all' ? ' active-ow' : '');
+
+    state.groups.forEach(g => {
+      const cnt = state.nodes.filter(n => n.groupId === g.id).length;
+      const div = document.createElement('div');
+      div.className = 'list-item' + (selGroupId === g.id ? ' active-ow' : '');
+      div.dataset.gid = g.id;
+      div.innerHTML = `
+        <div class="list-dot" style="background:${g.color}"></div>
+        <div class="list-name">${g.name}</div>
+        <div class="list-count">${cnt}</div>
+        <span class="list-rename-btn" title="이름 변경" onclick="event.stopPropagation();OW._renameGroup('${g.id}')">✎</span>
+      `;
+      div.onclick = () => selectGroup(g.id);
+      list.appendChild(div);
+    });
+  }
+
+  // ── render canvas ──
+  function renderCanvas() {
+    const edgesL = document.getElementById('ow-edgesLayer');
+    const nodesL = document.getElementById('ow-nodesLayer');
+    edgesL.innerHTML = ''; nodesL.innerHTML = '';
+
+    const vis = visibleNodes();
+    const visIds = new Set(vis.map(n => n.id));
+    const visEdges = state.edges.filter(e => visIds.has(e.fromId) && visIds.has(e.toId));
+
+    // edges
+    visEdges.forEach(e => {
+      const from = getNode(e.fromId), to = getNode(e.toId);
+      if (!from || !to) return;
+
+      const x1 = from.x + 70, y1 = from.y + 22;
+      const x2 = to.x   + 70, y2 = to.y   + 22;
+      const dx = x2-x1, dy = y2-y1, len = Math.sqrt(dx*dx+dy*dy) || 1;
+      const ux = dx/len, uy = dy/len;
+      const ex1 = x1+ux*42, ey1 = y1+uy*16;
+      const ex2 = x2-ux*42, ey2 = y2-uy*16;
+      const isRev = e.dir === 'to', isBoth = e.dir === 'both';
+      const color = isRev ? 'var(--ow-accent2)' : 'var(--ow-accent)';
+      const colorHex = isRev ? '#a78bfa' : '#4f8ef7';
+      const qcx = (ex1+ex2)/2 - uy*28, qcy = (ey1+ey2)/2 + ux*28;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', `M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', '1.8');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('opacity', '0.75');
+      path.style.cursor = 'pointer';
+      path.addEventListener('click', ev => { ev.stopPropagation(); openEdgePanel(e.id); });
+      edgesL.appendChild(path);
+
+      // Invisible hit-area for easier clicking
+      const hitPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+      hitPath.setAttribute('d', `M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      hitPath.setAttribute('stroke','transparent');
+      hitPath.setAttribute('stroke-width','16');
+      hitPath.setAttribute('fill', 'none');
+      hitPath.style.cursor = 'pointer';
+      hitPath.addEventListener('click', ev => { ev.stopPropagation(); openEdgePanel(e.id); });
+      edgesL.appendChild(hitPath);
+      function bezierPt(t) {
+        const mt = 1-t;
+        return {
+          x: mt*mt*ex1 + 2*mt*t*qcx + t*t*ex2,
+          y: mt*mt*ey1 + 2*mt*t*qcy + t*t*ey2,
+        };
+      }
+      function bezierTan(t) {
+        const dt = 0.01;
+        const a = bezierPt(Math.max(0,t-dt)), b = bezierPt(Math.min(1,t+dt));
+        const dl = Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2)||1;
+        return { tx:(b.x-a.x)/dl, ty:(b.y-a.y)/dl };
+      }
+
+      const midTs = isBoth ? [0.3, 0.7] : [0.4, 0.72];
+      midTs.forEach((t, i) => {
+        // For 'both', first arrow normal, second arrow reversed
+        const reversed = isBoth && i === 0; // first arrow points backward for 'both'
+        const pt = bezierPt(t);
+        let tan = bezierTan(t);
+        if (reversed) { tan = { tx: -tan.tx, ty: -tan.ty }; }
+        const arrowLen = 10, arrowW = 5;
+        const ax = pt.x + tan.tx * arrowLen, ay = pt.y + tan.ty * arrowLen;
+        const bx1 = pt.x - tan.ty * arrowW, by1 = pt.y + tan.tx * arrowW;
+        const bx2 = pt.x + tan.ty * arrowW, by2 = pt.y - tan.tx * arrowW;
+        const arrColor = (reversed && isBoth) ? '#a78bfa' : colorHex;
+        const arr = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        arr.setAttribute('points', `${ax},${ay} ${bx1},${by1} ${bx2},${by2}`);
+        arr.setAttribute('fill', arrColor);
+        arr.setAttribute('opacity','0.9');
+        arr.style.pointerEvents = 'none';
+        edgesL.appendChild(arr);
+      });
+
+      if (e.rate) {
+        const mp = bezierPt(0.5);
+        // background pill
+        const pill = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        const rw = 38, rh = 16;
+        pill.setAttribute('x', mp.x - rw/2); pill.setAttribute('y', mp.y - rh/2 - 2);
+        pill.setAttribute('width', rw); pill.setAttribute('height', rh);
+        pill.setAttribute('rx','8');
+        pill.setAttribute('fill','#0d1117');
+        pill.setAttribute('stroke', colorHex);
+        pill.setAttribute('stroke-width','0.8');
+        pill.setAttribute('opacity','0.92');
+        edgesL.appendChild(pill);
+        const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+        t.setAttribute('x', mp.x); t.setAttribute('y', mp.y + 4);
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('class','edge-label-txt');
+        t.setAttribute('fill', colorHex);
+        t.setAttribute('font-size','10');
+        t.textContent = e.rate + '%';
+        edgesL.appendChild(t);
+      }
+      if (e.note) {
+        const mp = bezierPt(e.rate ? 0.62 : 0.5);
+        const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+        t2.setAttribute('x', mp.x); t2.setAttribute('y', mp.y + 18);
+        t2.setAttribute('text-anchor','middle');
+        t2.setAttribute('class','edge-label-txt');
+        t2.setAttribute('fill', colorHex); t2.setAttribute('font-size','9');
+        t2.textContent = e.note.length>12 ? e.note.slice(0,12)+'…' : e.note;
+        edgesL.appendChild(t2);
+      }
+    });
+
+    // nodes
+    vis.forEach(n => {
+      const color = getGroupColor(n.groupId);
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('transform', `translate(${n.x||80},${n.y||80})`);
+      g.setAttribute('class','node-g');
+
+      const nodeType = n.nodeType || 'unlisted'; // person | unlisted | kospi | kosdaq
+      const isFlash = n.id === _flashNid;
+
+      if (nodeType === 'person') {
+        // Circle shape
+        const shadow = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        shadow.setAttribute('cx','44'); shadow.setAttribute('cy','26');
+        shadow.setAttribute('r','36'); shadow.setAttribute('fill', color); shadow.setAttribute('opacity','0.08');
+        g.appendChild(shadow);
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        circle.setAttribute('cx','44'); circle.setAttribute('cy','24');
+        circle.setAttribute('r','32');
+        circle.setAttribute('fill','#0d1117');
+        circle.setAttribute('stroke', isFlash ? '#ffffff' : color);
+        circle.setAttribute('stroke-width', isFlash ? '3' : '2');
+        g.appendChild(circle);
+
+        const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        bar.setAttribute('x','12'); bar.setAttribute('y','6');
+        bar.setAttribute('width','4'); bar.setAttribute('height','36');
+        bar.setAttribute('rx','2'); bar.setAttribute('fill', color);
+        g.appendChild(bar);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x','44'); label.setAttribute('y','28');
+        label.setAttribute('text-anchor','middle');
+        label.setAttribute('fill','#e2e8f0'); label.setAttribute('font-size','11');
+        label.setAttribute('font-family','Pretendard,sans-serif'); label.setAttribute('font-weight','600');
+        label.textContent = n.name.length > 7 ? n.name.slice(0,7)+'…' : n.name;
+        g.appendChild(label);
+
+        const badge = document.createElementNS('http://www.w3.org/2000/svg','text');
+        badge.setAttribute('x','44'); badge.setAttribute('y','44');
+        badge.setAttribute('text-anchor','middle'); badge.setAttribute('font-size','9');
+        badge.setAttribute('fill', color); badge.setAttribute('opacity','0.75');
+        badge.setAttribute('font-family','Pretendard,sans-serif');
+        badge.textContent = '👤 인물';
+        g.appendChild(badge);
+
+      } else if (nodeType === 'unlisted') {
+        // Triangle shape
+        const triH = 52, triW = 90, cx = 70;
+        const pts = `${cx},2 ${cx-triW/2},${triH} ${cx+triW/2},${triH}`;
+        const shadow2 = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        shadow2.setAttribute('points',pts.replace(/(\d+),(\d+)/g, (_,x,y) => `${+x+2},${+y+3}`));
+        shadow2.setAttribute('fill',color); shadow2.setAttribute('opacity','0.08');
+        g.appendChild(shadow2);
+
+        const tri = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        tri.setAttribute('points', pts);
+        tri.setAttribute('fill','#0d1117');
+        tri.setAttribute('stroke', isFlash ? '#ffffff' : color);
+        tri.setAttribute('stroke-width', isFlash ? '3' : '2');
+        g.appendChild(tri);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x', String(cx)); label.setAttribute('y','36');
+        label.setAttribute('text-anchor','middle');
+        label.setAttribute('fill','#e2e8f0'); label.setAttribute('font-size','11');
+        label.setAttribute('font-family','Pretendard,sans-serif'); label.setAttribute('font-weight','500');
+        label.textContent = n.name.length > 8 ? n.name.slice(0,8)+'…' : n.name;
+        g.appendChild(label);
+
+        const badge = document.createElementNS('http://www.w3.org/2000/svg','text');
+        badge.setAttribute('x', String(cx)); badge.setAttribute('y','49');
+        badge.setAttribute('text-anchor','middle'); badge.setAttribute('font-size','8');
+        badge.setAttribute('fill', color); badge.setAttribute('opacity','0.7');
+        badge.setAttribute('font-family','Pretendard,sans-serif');
+        badge.textContent = '△ 비상장';
+        g.appendChild(badge);
+
+      } else {
+        // Rectangle: kospi=red border, kosdaq=green border, else group color
+        const strokeColor = nodeType === 'kospi' ? '#f87171' : nodeType === 'kosdaq' ? '#34d399' : color;
+        const fillColor   = nodeType === 'kospi' ? '#1a0808' : nodeType === 'kosdaq' ? '#081a10' : '#0d1117';
+        const barColor    = nodeType === 'kospi' ? '#f87171' : nodeType === 'kosdaq' ? '#34d399' : color;
+
+        const shadow = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        shadow.setAttribute('x','2'); shadow.setAttribute('y','4');
+        shadow.setAttribute('width','140'); shadow.setAttribute('height','44');
+        shadow.setAttribute('rx','10'); shadow.setAttribute('fill', strokeColor); shadow.setAttribute('opacity','0.1');
+        g.appendChild(shadow);
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('width','140'); rect.setAttribute('height','44');
+        rect.setAttribute('rx','10');
+        rect.setAttribute('fill', fillColor);
+        rect.setAttribute('stroke', isFlash ? '#ffffff' : strokeColor);
+        rect.setAttribute('stroke-width', isFlash ? '2.5' : nodeType==='kospi'||nodeType==='kosdaq' ? '2' : '1.5');
+        g.appendChild(rect);
+
+        const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        bar.setAttribute('x','0'); bar.setAttribute('y','0');
+        bar.setAttribute('width','4'); bar.setAttribute('height','44');
+        bar.setAttribute('rx','2'); bar.setAttribute('fill', barColor);
+        g.appendChild(bar);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x','76'); label.setAttribute('y','27');
+        label.setAttribute('text-anchor','middle');
+        label.setAttribute('fill','#e2e8f0'); label.setAttribute('font-size','12');
+        label.setAttribute('font-family','Pretendard,sans-serif'); label.setAttribute('font-weight','500');
+        label.textContent = n.name.length > 10 ? n.name.slice(0,10)+'…' : n.name;
+        g.appendChild(label);
+
+        if (nodeType === 'kospi' || nodeType === 'kosdaq') {
+          const badgeRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+          badgeRect.setAttribute('x','100'); badgeRect.setAttribute('y','5');
+          badgeRect.setAttribute('width', nodeType==='kospi'?36:42); badgeRect.setAttribute('height','14');
+          badgeRect.setAttribute('rx','4'); badgeRect.setAttribute('fill', strokeColor); badgeRect.setAttribute('opacity','0.2');
+          g.appendChild(badgeRect);
+          const badgeText = document.createElementNS('http://www.w3.org/2000/svg','text');
+          badgeText.setAttribute('x','121'); badgeText.setAttribute('y','16');
+          badgeText.setAttribute('text-anchor','middle'); badgeText.setAttribute('font-size','9');
+          badgeText.setAttribute('font-weight','700'); badgeText.setAttribute('fill', strokeColor);
+          badgeText.setAttribute('font-family','Pretendard,sans-serif');
+          badgeText.textContent = nodeType === 'kospi' ? 'KOSPI' : 'KOSDAQ';
+          g.appendChild(badgeText);
+        }
+      }
+
+      g.addEventListener('mousedown', ev => canvas.startNodeDrag(ev, n.id));
+      g.addEventListener('click', ev => { if (!canvas.wasRecentlyDragging()) showCompanyPopup_OW(ev, n.id); });
+      g.addEventListener('contextmenu', ev => { ev.preventDefault(); showNodeCtx(ev, n.id); });
+      nodesL.appendChild(g);
+    });
+  }
+
+  function render() { renderSidebar(); renderCanvas(); }
+
+  // ── context menus ──
+  let ctxNid = null;
+  function showNodeCtx(ev, nid) {
+    ctxNid = nid;
+    const m = document.getElementById('ctxMenu');
+    m.innerHTML = `
+      <div class="ctx-item" onclick="OW._ctxAddEdge()">↗ 지분선 연결</div>
+      <div class="ctx-item" onclick="OW._ctxEdit()">✏️ 편집</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="OW._ctxDelete()">🗑 삭제</div>
+    `;
+    m.style.display = 'block';
+    m.style.left = ev.clientX + 'px'; m.style.top = ev.clientY + 'px';
+    ev.stopPropagation();
+  }
+  let _epEid = null;
+  function openEdgePanel(eid) {
+    const e = state.edges.find(e => e.id === eid); if(!e) return;
+    _epEid = eid;
+    const from = getNode(e.fromId), to = getNode(e.toId);
+    document.getElementById('ow-ep-from').textContent = from ? from.name : '?';
+    document.getElementById('ow-ep-to').textContent   = to   ? to.name   : '?';
+    document.getElementById('ow-ep-dir').value  = e.dir  || 'from';
+    document.getElementById('ow-ep-rate').value = e.rate || '';
+    document.getElementById('ow-ep-note').value = e.note || '';
+    document.getElementById('ow-edgePanel').classList.add('open');
+    // close right panel if open
+    document.getElementById('ow-rightPanel').classList.remove('open');
+  }
+  function closeEdgePanel() {
+    _epEid = null;
+    document.getElementById('ow-edgePanel').classList.remove('open');
+  }
+
+  function showEdgeCtx(ev, eid) {
+    const m = document.getElementById('ctxMenu');
+    m.innerHTML = `
+      <div class="ctx-item" onclick="OW._ctxEditEdge('${eid}')">✏️ 지분율/방향 수정</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="OW._ctxDeleteEdge('${eid}')">🗑 연결 삭제</div>
+    `;
+    m.style.display = 'block';
+    m.style.left = ev.clientX + 'px'; m.style.top = ev.clientY + 'px';
+    ev.stopPropagation();
+  }
+
+  // ── company popup ──
+  function showCompanyPopup_OW(ev, nid) {
+    const n = getNode(nid);
+    if (!n) return;
+    currentNodeId = nid;
+
+    document.getElementById('pp_name').textContent = n.name;
+    document.getElementById('pp_sub').textContent = getGroupName(n.groupId);
+    document.getElementById('pp_note').textContent = n.note || '';
+    document.getElementById('pp_note').style.display = n.note ? 'block' : 'none';
+
+    const tagsEl = document.getElementById('pp_tags');
+    tagsEl.innerHTML = (n.tags||[]).map(t => `<span class="tag tag-ow">${t}</span>`).join('');
+
+    const actions = document.getElementById('pp_actions');
+    actions.innerHTML = `
+      <button class="popup-action-btn" onclick="OW._openResearch()">🔍 연구 플랫폼에서 검색</button>
+      <button class="popup-action-btn" onclick="OW._openEdit()">✏️ 편집</button>
+      <button class="popup-action-btn" onclick="OW._openEdgeFromPopup()">↗ 지분 연결 추가</button>
+    `;
+
+    // Cross-links to ecosystem
+    const ecState = loadLS('ec_data', { industries:[], nodes:[], edges:[] });
+    const crossEl = document.getElementById('pp_crossLinks');
+    crossEl.innerHTML = '';
+    const matches = ecState.nodes.filter(en =>
+      en.name === n.name || en.name.replace(/\(주\)|㈜/g,'') === n.name.replace(/\(주\)|㈜/g,'')
+    );
+    if (matches.length > 0) {
+      const hdr = document.createElement('div');
+      hdr.className = 'popup-cross-header';
+      hdr.textContent = '📎 산업 생태계에도 있음';
+      crossEl.appendChild(hdr);
+      matches.forEach(m => {
+        const ind = ecState.industries.find(i => i.id === m.industryId);
+        const div = document.createElement('div');
+        div.className = 'popup-cross-item';
+        div.innerHTML = `🌐 ${ind ? ind.name : '산업 생태계'} 지도로 이동`;
+        div.onclick = () => { closePopup(); EC.jumpToIndustry(m.industryId); switchTab('eco'); };
+        crossEl.appendChild(div);
+      });
+    }
+
+    const popup = document.getElementById('companyPopup');
+    popup.style.display = 'block';
+    const x = Math.min(ev.clientX + 12, window.innerWidth  - 330);
+    const y = Math.min(ev.clientY + 12, window.innerHeight - 340);
+    popup.style.left = x + 'px'; popup.style.top = y + 'px';
+  }
+
+  // ── group management ──
+  function selectGroup(gid) { selGroupId = gid; render(); }
+
+  function openAddGroup() {
+    document.getElementById('ow-m_groupName').value = '';
+    document.getElementById('ow-m_groupColor').value = GROUP_COLORS[state.groups.length % GROUP_COLORS.length];
+    openModal('ow-modalGroup');
+  }
+  function saveGroup() {
+    const name = document.getElementById('ow-m_groupName').value.trim();
+    if (!name) return alert('그룹명을 입력하세요');
+    const color = document.getElementById('ow-m_groupColor').value;
+    state.groups.push({ id: uid(), name, color });
+    saveState(); closeModal('ow-modalGroup'); render();
+  }
+
+  // ── node management ──
+  function _fillGroupSel(selId) {
+    const ids = ['ow-m_nodeGroup','ow-p_group'];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.innerHTML = '<option value="">미분류</option>';
+      state.groups.forEach(g => { el.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+      if (selId) el.value = selId;
+    });
+  }
+
+  function openAddNode() {
+    _fillGroupSel(selGroupId !== 'all' ? selGroupId : '');
+    document.getElementById('ow-m_nodeName').value = '';
+    openModal('ow-modalNode');
+  }
+  function saveNewNode() {
+    const name = document.getElementById('ow-m_nodeName').value.trim();
+    if (!name) return alert('회사명을 입력하세요');
+    const groupId = document.getElementById('ow-m_nodeGroup').value;
+    const nodeType = document.getElementById('ow-m_nodeType').value || 'unlisted';
+    const vis = visibleNodes();
+    const cols = Math.ceil(Math.sqrt(vis.length + 1));
+    const i = vis.length;
+    state.nodes.push({
+      id: uid(), name, groupId, nodeType,
+      x: 80 + (i % cols) * 200,
+      y: 80 + Math.floor(i / cols) * 130,
+      note: '', tags: []
+    });
+    saveState(); closeModal('ow-modalNode'); render();
+  }
+
+  function openNodeEditPanel(nid) {
+    currentNodeId = nid;
+    const n = getNode(nid); if (!n) return;
+    _fillGroupSel(n.groupId);
+    document.getElementById('ow-p_name').value = n.name;
+    document.getElementById('ow-p_note').value = n.note || '';
+    document.getElementById('ow-p_nodeType').value = n.nodeType || 'unlisted';
+    renderPanelTags(n.tags || []);
+    document.getElementById('ow-panelTitle').textContent = n.name + ' 편집';
+    document.getElementById('ow-rightPanel').classList.add('open');
+  }
+  function closePanel() { document.getElementById('ow-rightPanel').classList.remove('open'); }
+
+  function renderPanelTags(tags) {
+    panelTags = [...(tags||[])];
+    const area = document.getElementById('ow-p_tags');
+    area.innerHTML = '';
+    panelTags.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'tag tag-ow';
+      div.innerHTML = `${t} <span class="tag-del" onclick="OW._removeTag(${i})">✕</span>`;
+      area.appendChild(div);
+    });
+  }
+  function addPanelTag() {
+    const v = document.getElementById('ow-p_tagInput').value.trim();
+    if (!v) return;
+    panelTags.push(v);
+    document.getElementById('ow-p_tagInput').value = '';
+    renderPanelTags(panelTags);
+  }
+  function saveNodePanel() {
+    const n = getNode(currentNodeId); if (!n) return;
+    n.name     = document.getElementById('ow-p_name').value.trim() || n.name;
+    n.groupId  = document.getElementById('ow-p_group').value;
+    n.note     = document.getElementById('ow-p_note').value.trim();
+    n.nodeType = document.getElementById('ow-p_nodeType').value;
+    n.tags     = [...panelTags];
+    saveState(); closePanel(); render();
+  }
+  function deleteCurrentNode() {
+    if (!currentNodeId) { alert('삭제할 회사가 선택되지 않았습니다.'); return; }
+    if (!confirm('이 회사와 관련된 모든 지분 연결도 삭제됩니다. 계속하시겠습니까?')) return;
+    _deleteNode(currentNodeId);
+    currentNodeId = null;
+    closePanel();
+  }
+  function _deleteNode(nid) {
+    state.nodes = state.nodes.filter(n => n.id !== nid);
+    state.edges = state.edges.filter(e => e.fromId !== nid && e.toId !== nid);
+    saveState(); render();
+  }
+
+  // ── edge management ──
+  function _fillEdgeTo(fromId) {
+    const sel = document.getElementById('ow-m_edgeTo');
+    sel.innerHTML = '';
+    state.nodes.filter(n => n.id !== fromId).forEach(n => {
+      sel.innerHTML += `<option value="${n.id}">${n.name}</option>`;
+    });
+  }
+  function saveEdge() {
+    const toId = document.getElementById('ow-m_edgeTo').value;
+    const rate = document.getElementById('ow-m_edgeRate').value;
+    const dir  = document.getElementById('ow-m_edgeDir').value;
+    if (!edgeFromId || !toId) return;
+    state.edges.push({ id: uid(), fromId: edgeFromId, toId, rate, dir });
+    saveState(); closeModal('ow-modalEdge'); render();
+  }
+
+  // ── layout ──
+  function autoLayout() {
+    const vis = visibleNodes();
+    const cols = Math.ceil(Math.sqrt(vis.length));
+    vis.forEach((n, i) => { n.x = 80 + (i % cols) * 210; n.y = 80 + Math.floor(i / cols) * 130; });
+    saveState(); renderCanvas();
+  }
+  function setTool(t) {
+    tool = t;
+    document.getElementById('ow-toolSelect').classList.toggle('active-ow', t === 'select');
+    document.getElementById('ow-toolEdge').classList.toggle('active-ow', t === 'edge');
+    document.getElementById('ow-canvas').style.cursor = t === 'edge' ? 'crosshair' : 'default';
+  }
+
+  // ── export ──
+  function exportData() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'ownership.json'; a.click();
+  }
+
+  // ── public ctx handlers (called from HTML onclick) ──
+  return {
+    init() {
+      loadState();
+      canvas = makeCanvas({
+        svgId: 'ow-canvas', zoomGroupId: 'ow-zoomGroup',
+        edgesId: 'ow-edgesLayer', nodesId: 'ow-nodesLayer',
+        getNode, renderCanvas, saveState,
+      });
+      // Tag input enter key
+      document.getElementById('ow-p_tagInput').addEventListener('keydown', e => { if (e.key === 'Enter') addPanelTag(); });
+      render();
+    },
+    selectGroup, openAddGroup, saveGroup,
+    openAddNode, saveNewNode,
+    saveNodePanel, closePanel, deleteCurrentNode, addPanelTag,
+    saveEdge,
+    autoLayout, setTool, exportData,
+    zoomIn()    { canvas.zoomIn(); },
+    zoomOut()   { canvas.zoomOut(); },
+    resetView() { canvas.resetView(); },
+    _renameGroup(gid) {
+      const g = state.groups.find(g => g.id === gid); if (!g) return;
+      const newName = prompt('그룹명 변경:', g.name);
+      if (newName && newName.trim()) { g.name = newName.trim(); saveState(); render(); }
+    },
+    // ctx handlers
+    _ctxAddEdge() {
+      if (!ctxNid) return;
+      edgeFromId = ctxNid;
+      document.getElementById('ow-edgeFromName').textContent = getNode(ctxNid)?.name;
+      _fillEdgeTo(ctxNid);
+      openModal('ow-modalEdge');
+    },
+    _ctxEdit()   { if (ctxNid) openNodeEditPanel(ctxNid); },
+    _ctxDelete() { if (ctxNid) _deleteNode(ctxNid); },
+    _ctxEditEdge(eid) {
+      const e = state.edges.find(e => e.id === eid);
+      if (!e) return;
+      // populate edit modal
+      const from = getNode(e.fromId), to = getNode(e.toId);
+      document.getElementById('ow-editEdgeLabel').textContent =
+        `${from ? from.name : '?'} → ${to ? to.name : '?'}`;
+      document.getElementById('ow-ee_rate').value = e.rate || '';
+      document.getElementById('ow-ee_dir').value  = e.dir  || 'from';
+      document.getElementById('ow-ee_note').value = e.note || '';
+      document.getElementById('ow-modalEdgeEdit').dataset.eid = eid;
+      openModal('ow-modalEdgeEdit');
+    },
+    _saveEditEdge() {
+      const eid = document.getElementById('ow-modalEdgeEdit').dataset.eid;
+      const e = state.edges.find(e => e.id === eid);
+      if (!e) return;
+      e.rate = document.getElementById('ow-ee_rate').value;
+      e.dir  = document.getElementById('ow-ee_dir').value;
+      e.note = document.getElementById('ow-ee_note').value.trim();
+      saveState(); closeModal('ow-modalEdgeEdit'); renderCanvas();
+    },
+    _deleteEditingEdge() {
+      const eid = document.getElementById('ow-modalEdgeEdit').dataset.eid;
+      state.edges = state.edges.filter(e => e.id !== eid);
+      saveState(); closeModal('ow-modalEdgeEdit'); renderCanvas();
+    },
+    _ctxDeleteEdge(eid) {
+      state.edges = state.edges.filter(e => e.id !== eid);
+      saveState(); renderCanvas();
+    },
+    closeEdgePanel,
+    _epSave() {
+      const e = state.edges.find(e => e.id === _epEid); if(!e) return;
+      e.dir  = document.getElementById('ow-ep-dir').value;
+      e.rate = document.getElementById('ow-ep-rate').value;
+      e.note = document.getElementById('ow-ep-note').value.trim();
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _epDelete() {
+      if(!_epEid) return;
+      if(!confirm('이 지분 연결을 삭제할까요?')) return;
+      state.edges = state.edges.filter(e => e.id !== _epEid);
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _removeTag(i)     { panelTags.splice(i,1); renderPanelTags(panelTags); },
+    _openResearch()   { const n = getNode(currentNodeId); if(n) window.open(RESEARCH_BASE + '#' + encodeURIComponent(n.name), '_blank'); },
+    _openEdit()       { closePopup(); openNodeEditPanel(currentNodeId); },
+    _openEdgeFromPopup() {
+      closePopup();
+      edgeFromId = currentNodeId;
+      document.getElementById('ow-edgeFromName').textContent = getNode(currentNodeId)?.name;
+      _fillEdgeTo(currentNodeId);
+      openModal('ow-modalEdge');
+    },
+    getState() { return state; },
+    _flashNode(nid) {
+      _flashNid = nid;
+      // show all nodes so the target is visible
+      selGroupId = 'all';
+      render();
+      setTimeout(() => { _flashNid = null; renderCanvas(); }, 1600);
+    },
+  };
+})();
+
+// ──────────────────────────────────────────────
+//  ECOSYSTEM MODULE
+// ──────────────────────────────────────────────
+const EC = (() => {
+  let state = { industries: [], nodes: [], edges: [] };
+  let selIndId = 'all';
+  let currentNodeId = null;
+  let edgeFromId = null;
+  let tool = 'select';
+  let panelTags = [];
+  let showClusters = true;
+  let selectedRel = 'collab';
+  let _flashNid = null;
+  const REL_COLORS   = { collab:'#22d3ee', compete:'#f97316', invest:'#a78bfa', neutral:'#94a3b8' };
+  const REL_MARKERS  = { collab:'url(#ec-arr-collab)', compete:'url(#ec-arr-compete)', invest:'url(#ec-arr-invest)', neutral:'url(#ec-arr-neutral)' };
+
+  let canvas;
+
+  function saveState() { saveLS('ec_data', state); }
+  function loadState() { state = loadLS('ec_data', { industries:[], nodes:[], edges:[] }); }
+
+  function getNode(nid) { return state.nodes.find(n => n.id === nid); }
+  function getIndName(iid) { const i = state.industries.find(i => i.id === iid); return i ? i.name : '미분류'; }
+  function visibleNodes() { return selIndId === 'all' ? state.nodes : state.nodes.filter(n => n.industryId === selIndId); }
+
+  function isCenterNode(vis, visEdges, nid) {
+    const conn = visEdges.filter(e => e.fromId === nid || e.toId === nid).length;
+    let max = 0;
+    vis.forEach(n => { const c = visEdges.filter(e => e.fromId===n.id||e.toId===n.id).length; if(c>max) max=c; });
+    return conn === max && max > 1;
+  }
+
+  // ── render sidebar ──
+  function renderSidebar() {
+    const list = document.getElementById('ec-industryList');
+    list.querySelectorAll('[data-iid]:not([data-iid="all"])').forEach(el => el.remove());
+    document.getElementById('ec-countAll').textContent = state.nodes.length;
+    list.querySelector('[data-iid="all"]').className = 'list-item' + (selIndId === 'all' ? ' active-ec' : '');
+
+    state.industries.forEach(ind => {
+      const cnt = state.nodes.filter(n => n.industryId === ind.id).length;
+      const div = document.createElement('div');
+      div.className = 'list-item' + (selIndId === ind.id ? ' active-ec' : '');
+      div.dataset.iid = ind.id;
+      div.innerHTML = `
+        <div class="list-icon">${ind.icon||'🏭'}</div>
+        <div class="list-name">${ind.name}</div>
+        <div class="list-count">${cnt}</div>
+        <span class="list-rename-btn" title="이름 변경" onclick="event.stopPropagation();EC._renameIndustry('${ind.id}')">✎</span>
+        <span class="list-rename-btn" title="산업 복사" onclick="event.stopPropagation();EC._copyIndustry('${ind.id}')" style="margin-left:2px">⧉</span>
+      `;
+      div.onclick = () => selectIndustry(ind.id);
+      list.appendChild(div);
+    });
+  }
+
+  // ── render canvas ──
+  function renderCanvas() {
+    const clustersL = document.getElementById('ec-clustersLayer');
+    const edgesL    = document.getElementById('ec-edgesLayer');
+    const nodesL    = document.getElementById('ec-nodesLayer');
+    clustersL.innerHTML = ''; edgesL.innerHTML = ''; nodesL.innerHTML = '';
+
+    const vis = visibleNodes();
+    const visIds = new Set(vis.map(n => n.id));
+    const visEdges = state.edges.filter(e => visIds.has(e.fromId) && visIds.has(e.toId));
+
+    // clusters
+    if (showClusters) {
+      const cmap = {};
+      vis.forEach(n => { if(n.cluster){ (cmap[n.cluster] = cmap[n.cluster]||[]).push(n); }});
+      Object.entries(cmap).forEach(([name, nodes], ci) => {
+        if (nodes.length < 2) return;
+        const CLUSTER_PALETTE = ['#1e3a5f','#2d1b4e','#1a3a2e','#3d2010','#1c2f1c','#2a1a3a'];
+        const bgColor = CLUSTER_PALETTE[ci % CLUSTER_PALETTE.length];
+        const strokeColors = ['#60a5fa','#a78bfa','#34d399','#fb923c','#4ade80','#c084fc'];
+        const strokeColor = strokeColors[ci % strokeColors.length];
+        const xs = nodes.map(n => (n.x||80)+70), ys = nodes.map(n => (n.y||80)+22);
+        const pad = 52;
+        const minX = Math.min(...xs)-pad, maxX = Math.max(...xs)+pad;
+        const minY = Math.min(...ys)-44, maxY = Math.max(...ys)+48;
+
+        // background fill
+        const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        bg.setAttribute('x',minX); bg.setAttribute('y',minY);
+        bg.setAttribute('width',maxX-minX); bg.setAttribute('height',maxY-minY);
+        bg.setAttribute('rx','18');
+        bg.setAttribute('fill', bgColor);
+        bg.setAttribute('opacity','0.38');
+        clustersL.appendChild(bg);
+
+        // border
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x',minX); rect.setAttribute('y',minY);
+        rect.setAttribute('width',maxX-minX); rect.setAttribute('height',maxY-minY);
+        rect.setAttribute('rx','18');
+        rect.setAttribute('fill','none');
+        rect.setAttribute('stroke', strokeColor);
+        rect.setAttribute('stroke-width','1.8');
+        rect.setAttribute('stroke-dasharray','7,4');
+        rect.setAttribute('opacity','0.7');
+        clustersL.appendChild(rect);
+
+        // label background pill
+        const labelW = name.length * 8 + 20;
+        const labelBg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        labelBg.setAttribute('x', minX+8); labelBg.setAttribute('y', minY-11);
+        labelBg.setAttribute('width', labelW); labelBg.setAttribute('height', 20);
+        labelBg.setAttribute('rx','10');
+        labelBg.setAttribute('fill', strokeColor);
+        labelBg.setAttribute('opacity','0.85');
+        clustersL.appendChild(labelBg);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+        label.setAttribute('x',minX+8+labelW/2); label.setAttribute('y',minY+3);
+        label.setAttribute('text-anchor','middle');
+        label.setAttribute('font-size','11');
+        label.setAttribute('font-weight','700');
+        label.setAttribute('fill','#ffffff');
+        label.setAttribute('font-family','Pretendard,sans-serif');
+        label.setAttribute('pointer-events','none');
+        label.textContent = name;
+        clustersL.appendChild(label);
+      });
+    }
+
+    // edges
+    visEdges.forEach(e => {
+      const from = getNode(e.fromId), to = getNode(e.toId);
+      if (!from || !to) return;
+      const x1=from.x+70, y1=from.y+22, x2=to.x+70, y2=to.y+22;
+      const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+      const ux=dx/len, uy=dy/len;
+      const ex1=x1+ux*44, ey1=y1+uy*18, ex2=x2-ux*44, ey2=y2-uy*18;
+      const color  = REL_COLORS[e.rel]  || REL_COLORS.neutral;
+      const qcx=(ex1+ex2)/2-uy*24, qcy=(ey1+ey2)/2+ux*24;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      path.setAttribute('stroke',color);
+      path.setAttribute('stroke-width','1.8');
+      path.setAttribute('fill','none');
+      path.setAttribute('opacity','0.7');
+      if (e.rel === 'compete') path.setAttribute('stroke-dasharray','6,4');
+      path.style.cursor = 'pointer';
+      path.addEventListener('click', ev => { ev.stopPropagation(); openEdgePanel(e.id); });
+      edgesL.appendChild(path);
+
+      // Invisible hit area
+      const hitP=document.createElementNS('http://www.w3.org/2000/svg','path');
+      hitP.setAttribute('d',`M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      hitP.setAttribute('stroke','transparent'); hitP.setAttribute('stroke-width','16'); hitP.setAttribute('fill','none');
+      hitP.style.cursor='pointer';
+      hitP.addEventListener('click', ev => { ev.stopPropagation(); openEdgePanel(e.id); });
+      edgesL.appendChild(hitP);
+
+      // Mid-path mini arrows
+      function bezierPt(t) {
+        const mt=1-t;
+        return { x:mt*mt*ex1+2*mt*t*qcx+t*t*ex2, y:mt*mt*ey1+2*mt*t*qcy+t*t*ey2 };
+      }
+      function bezierTan(t) {
+        const dt=0.01, a=bezierPt(Math.max(0,t-dt)), b=bezierPt(Math.min(1,t+dt));
+        const dl=Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2)||1;
+        return { tx:(b.x-a.x)/dl, ty:(b.y-a.y)/dl };
+      }
+      [0.38, 0.68].forEach(t => {
+        const pt=bezierPt(t), tan=bezierTan(t);
+        const aL=9, aW=4.5;
+        const ax=pt.x+tan.tx*aL, ay=pt.y+tan.ty*aL;
+        const bx1=pt.x-tan.ty*aW, by1=pt.y+tan.tx*aW;
+        const bx2=pt.x+tan.ty*aW, by2=pt.y-tan.tx*aW;
+        const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        arr.setAttribute('points',`${ax},${ay} ${bx1},${by1} ${bx2},${by2}`);
+        arr.setAttribute('fill',color); arr.setAttribute('opacity','0.9');
+        arr.style.pointerEvents='none';
+        edgesL.appendChild(arr);
+      });
+
+      if (e.note) {
+        const mp=bezierPt(0.5);
+        const pill=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        const noteLen=Math.min(e.note.length,12), rw=noteLen*7+14, rh=15;
+        pill.setAttribute('x',mp.x-rw/2); pill.setAttribute('y',mp.y-rh/2-1);
+        pill.setAttribute('width',rw); pill.setAttribute('height',rh);
+        pill.setAttribute('rx','7'); pill.setAttribute('fill','#0a1220');
+        pill.setAttribute('stroke',color); pill.setAttribute('stroke-width','0.7');
+        pill.setAttribute('opacity','0.92');
+        edgesL.appendChild(pill);
+        const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+        t.setAttribute('x',mp.x); t.setAttribute('y',mp.y+4.5);
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('class','edge-label-txt');
+        t.setAttribute('fill',color); t.setAttribute('font-size','10');
+        t.textContent=e.note.length>12?e.note.slice(0,12)+'…':e.note;
+        edgesL.appendChild(t);
+      }
+    });
+
+    // nodes
+    vis.forEach(n => {
+      const isCenter = isCenterNode(vis, visEdges, n.id);
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('transform',`translate(${n.x||80},${n.y||80})`);
+      g.setAttribute('class','node-g');
+
+      if (isCenter) {
+        const glow = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        glow.setAttribute('x','-3'); glow.setAttribute('y','-3');
+        glow.setAttribute('width','146'); glow.setAttribute('height','50');
+        glow.setAttribute('rx','13');
+        glow.setAttribute('fill','rgba(14,165,233,0.12)');
+        glow.setAttribute('stroke','rgba(14,165,233,0.35)');
+        glow.setAttribute('stroke-width','1');
+        glow.setAttribute('filter','url(#ec-glow)');
+        g.appendChild(glow);
+      }
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rect.setAttribute('width','140'); rect.setAttribute('height','44');
+      rect.setAttribute('rx','10');
+      rect.setAttribute('fill', isCenter ? '#0c1e30' : '#080f16');
+      rect.setAttribute('stroke', n.id === _flashNid ? '#ffffff' : (isCenter ? '#0ea5e9' : '#1a3350'));
+      rect.setAttribute('stroke-width', n.id === _flashNid ? '2.5' : '1.5');
+      g.appendChild(rect);
+
+      const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bar.setAttribute('x','0'); bar.setAttribute('y','0');
+      bar.setAttribute('width','4'); bar.setAttribute('height','44');
+      bar.setAttribute('rx','2');
+      bar.setAttribute('fill', isCenter ? '#0ea5e9' : '#1a4a6a');
+      g.appendChild(bar);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x','76'); label.setAttribute('y','27');
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('fill', isCenter ? '#bae6fd' : '#d4e8f5');
+      label.setAttribute('font-size', isCenter ? '12.5' : '12');
+      label.setAttribute('font-family','Pretendard,sans-serif');
+      label.setAttribute('font-weight', isCenter ? '600' : '400');
+      label.textContent = n.name.length>10 ? n.name.slice(0,10)+'…' : n.name;
+      g.appendChild(label);
+
+      g.addEventListener('mousedown', ev => canvas.startNodeDrag(ev, n.id));
+      g.addEventListener('click', ev => { if (!canvas.wasRecentlyDragging()) showCompanyPopup_EC(ev, n.id); });
+      g.addEventListener('contextmenu', ev => { ev.preventDefault(); showNodeCtx(ev, n.id); });
+      nodesL.appendChild(g);
+    });
+  }
+
+  function render() { renderSidebar(); renderCanvas(); }
+
+  // ── context menus ──
+  let ctxNid = null;
+  function showNodeCtx(ev, nid) {
+    ctxNid = nid;
+    const m = document.getElementById('ctxMenu');
+    m.innerHTML = `
+      <div class="ctx-item" onclick="EC._ctxAddEdge()">↗ 관계 연결</div>
+      <div class="ctx-item" onclick="EC._ctxEdit()">✏️ 편집</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="EC._ctxDelete()">🗑 삭제</div>
+    `;
+    m.style.display='block';
+    m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+    ev.stopPropagation();
+  }
+
+  let _epEid = null;
+  function openEdgePanel(eid) {
+    const e = state.edges.find(e=>e.id===eid); if(!e) return;
+    _epEid = eid;
+    const from=getNode(e.fromId), to=getNode(e.toId);
+    document.getElementById('ec-ep-from').textContent = from?from.name:'?';
+    document.getElementById('ec-ep-to').textContent   = to?to.name:'?';
+    document.getElementById('ec-ep-note').value = e.note||'';
+    document.querySelectorAll('#ec-ep-relBtns .rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel===e.rel));
+    document.getElementById('ec-edgePanel').classList.add('open');
+    document.getElementById('ec-rightPanel').classList.remove('open');
+  }
+  function closeEdgePanel() {
+    _epEid = null;
+    document.getElementById('ec-edgePanel').classList.remove('open');
+  }
+
+  function showEdgeCtx(ev, eid) {
+    const m = document.getElementById('ctxMenu');
+    m.innerHTML = `
+      <div class="ctx-item" onclick="EC._ctxEditEdge('${eid}')">✏️ 관계유형/설명 수정</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="EC._ctxDeleteEdge('${eid}')">🗑 관계 삭제</div>
+    `;
+    m.style.display='block';
+    m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+    ev.stopPropagation();
+  }
+
+  // ── company popup ──
+  function showCompanyPopup_EC(ev, nid) {
+    const n = getNode(nid); if (!n) return;
+    currentNodeId = nid;
+
+    document.getElementById('pp_name').textContent = n.name;
+    document.getElementById('pp_sub').textContent = getIndName(n.industryId);
+    document.getElementById('pp_note').textContent = n.role || '';
+    document.getElementById('pp_note').style.display = n.role ? 'block' : 'none';
+
+    const tagsEl = document.getElementById('pp_tags');
+    tagsEl.innerHTML = (n.tags||[]).map(t => `<span class="tag tag-ec">${t}</span>`).join('');
+
+    const actions = document.getElementById('pp_actions');
+    actions.innerHTML = `
+      <button class="popup-action-btn ec" onclick="EC._openResearch()">🔍 연구 플랫폼에서 검색</button>
+      <button class="popup-action-btn ec" onclick="EC._openEdit()">✏️ 편집</button>
+      <button class="popup-action-btn ec" onclick="EC._openEdgeFromPopup()">↗ 관계 연결 추가</button>
+    `;
+
+    // Cross-links to ownership
+    const owState = OW.getState();
+    const crossEl = document.getElementById('pp_crossLinks');
+    crossEl.innerHTML = '';
+    const matches = (owState.nodes||[]).filter(on =>
+      on.name === n.name || on.name.replace(/\(주\)|㈜/g,'') === n.name.replace(/\(주\)|㈜/g,'')
+    );
+    if (matches.length > 0) {
+      const hdr = document.createElement('div');
+      hdr.className = 'popup-cross-header';
+      hdr.textContent = '📎 지분 구조에도 있음';
+      crossEl.appendChild(hdr);
+      matches.forEach(m => {
+        const g = (owState.groups||[]).find(g => g.id === m.groupId);
+        const div = document.createElement('div');
+        div.className = 'popup-cross-item';
+        div.innerHTML = `🏢 ${g ? g.name : '그룹'} 지분 구조로 이동`;
+        div.onclick = () => { closePopup(); OW._jumpToGroup(m.groupId); switchTab('ow'); };
+        crossEl.appendChild(div);
+      });
+    }
+
+    const popup = document.getElementById('companyPopup');
+    popup.style.display = 'block';
+    const x = Math.min(ev.clientX+12, window.innerWidth-330);
+    const y = Math.min(ev.clientY+12, window.innerHeight-350);
+    popup.style.left = x+'px'; popup.style.top = y+'px';
+  }
+
+  // ── industry management ──
+  function selectIndustry(iid) { selIndId = iid; render(); }
+
+  function openAddIndustry() {
+    document.getElementById('ec-m_indName').value = '';
+    document.getElementById('ec-m_indIcon').value = '';
+    openModal('ec-modalInd');
+  }
+  function saveIndustry() {
+    const name = document.getElementById('ec-m_indName').value.trim();
+    if (!name) return alert('산업명을 입력하세요');
+    let icon = document.getElementById('ec-m_indIcon').value || '';
+    if (!icon) icon = _suggestEmoji(name);
+    state.industries.push({ id: uid(), name, icon });
+    saveState(); closeModal('ec-modalInd'); render();
+  }
+
+  function _suggestEmoji(name) {
+    const MAP = [
+      [['반도체','칩','파운드리','팹','웨이퍼'], '💾'],
+      [['전자','디스플레이','lcd','oled','패널'], '📺'],
+      [['자동차','차','모빌리티','ev','전기차'], '🚗'],
+      [['배터리','이차전지','셀','양극재','전해질'], '🔋'],
+      [['금융','은행','증권','보험','캐피탈'], '🏦'],
+      [['바이오','제약','헬스','의약','치료','신약'], '💊'],
+      [['통신','텔레콤','네트워크','5g','lte'], '📡'],
+      [['플랫폼','포털','검색','sns','소셜'], '🌐'],
+      [['게임','엔터테인','콘텐츠','미디어','방송'], '🎮'],
+      [['건설','부동산','주택','인프라'], '🏗️'],
+      [['화학','소재','석유','정유','나프타'], '⚗️'],
+      [['철강','금속','알루미늄','동'], '🏭'],
+      [['유통','물류','리테일','이커머스','쇼핑'], '📦'],
+      [['식품','음료','농업','축산'], '🍔'],
+      [['항공','해운','운송','선박'], '✈️'],
+      [['에너지','태양광','풍력','수소','신재생'], '⚡'],
+      [['ai','인공지능','머신러닝','데이터'], '🤖'],
+      [['sw','소프트웨어','cloud','클라우드','saas'], '☁️'],
+      [['방산','군수','항공우주'], '🛡️'],
+    ];
+    const lower = name.toLowerCase();
+    for (const [keys, emoji] of MAP) {
+      if (keys.some(k => lower.includes(k))) return emoji;
+    }
+    return '🏭';
+  }
+
+  // ── node management ──
+  function _fillIndSel(selId) {
+    const ids = ['ec-m_nodeInd','ec-p_industry'];
+    ids.forEach(id => {
+      const el = document.getElementById(id); if(!el) return;
+      el.innerHTML = '<option value="">미분류</option>';
+      state.industries.forEach(i => { el.innerHTML += `<option value="${i.id}">${i.name}</option>`; });
+      if (selId) el.value = selId;
+    });
+  }
+
+  function openAddNode() {
+    _fillIndSel(selIndId !== 'all' ? selIndId : '');
+    document.getElementById('ec-m_nodeName').value = '';
+    openModal('ec-modalNode');
+  }
+  function saveNewNode() {
+    const name = document.getElementById('ec-m_nodeName').value.trim();
+    if (!name) return alert('기업명을 입력하세요');
+    const industryId = document.getElementById('ec-m_nodeInd').value;
+    const vis = visibleNodes();
+    const cols = Math.ceil(Math.sqrt(vis.length+1));
+    const i = vis.length;
+    state.nodes.push({ id:uid(), name, industryId, x:80+(i%cols)*210, y:80+Math.floor(i/cols)*130, role:'', cluster:'', tags:[] });
+    saveState(); closeModal('ec-modalNode'); render();
+  }
+
+  function openNodeEditPanel(nid) {
+    currentNodeId = nid;
+    const n = getNode(nid); if (!n) return;
+    _fillIndSel(n.industryId);
+    document.getElementById('ec-p_name').value = n.name;
+    document.getElementById('ec-p_role').value = n.role || '';
+    document.getElementById('ec-p_cluster').value = n.cluster || '';
+    renderPanelTags(n.tags || []);
+    document.getElementById('ec-panelTitle').textContent = n.name + ' 편집';
+    document.getElementById('ec-rightPanel').classList.add('open');
+  }
+  function closePanel() { document.getElementById('ec-rightPanel').classList.remove('open'); }
+
+  function renderPanelTags(tags) {
+    panelTags = [...(tags||[])];
+    const area = document.getElementById('ec-p_tags');
+    area.innerHTML = '';
+    panelTags.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'tag tag-ec';
+      div.innerHTML = `${t} <span class="tag-del" onclick="EC._removeTag(${i})">✕</span>`;
+      area.appendChild(div);
+    });
+  }
+  function addPanelTag() {
+    const v = document.getElementById('ec-p_tagInput').value.trim();
+    if (!v) return;
+    panelTags.push(v);
+    document.getElementById('ec-p_tagInput').value = '';
+    renderPanelTags(panelTags);
+  }
+  function saveNodePanel() {
+    const n = getNode(currentNodeId); if (!n) return;
+    n.name       = document.getElementById('ec-p_name').value.trim() || n.name;
+    n.industryId = document.getElementById('ec-p_industry').value;
+    n.role       = document.getElementById('ec-p_role').value.trim();
+    n.cluster    = document.getElementById('ec-p_cluster').value.trim();
+    n.tags       = [...panelTags];
+    saveState(); closePanel(); render();
+  }
+  function deleteCurrentNode() {
+    if (!currentNodeId) { alert('삭제할 기업이 선택되지 않았습니다.'); return; }
+    if (!confirm('이 기업과 관련된 모든 관계 연결도 삭제됩니다. 계속하시겠습니까?')) return;
+    _deleteNode(currentNodeId);
+    currentNodeId = null;
+    closePanel();
+  }
+  function _deleteNode(nid) {
+    state.nodes = state.nodes.filter(n => n.id !== nid);
+    state.edges = state.edges.filter(e => e.fromId !== nid && e.toId !== nid);
+    saveState(); render();
+  }
+
+  // ── edge ──
+  function selectRel(btn) {
+    selectedRel = btn.dataset.rel;
+    document.querySelectorAll('#ec-relBtns .rel-btn').forEach(b => b.classList.toggle('sel', b.dataset.rel === selectedRel));
+  }
+  function _fillEdgeTo(fromId) {
+    const sel = document.getElementById('ec-m_edgeTo');
+    sel.innerHTML = '';
+    state.nodes.filter(n => n.id !== fromId).forEach(n => { sel.innerHTML += `<option value="${n.id}">${n.name}</option>`; });
+  }
+  function saveEdge() {
+    const toId = document.getElementById('ec-m_edgeTo').value;
+    const note = document.getElementById('ec-m_edgeNote').value.trim();
+    if (!edgeFromId || !toId) return;
+    state.edges.push({ id:uid(), fromId:edgeFromId, toId, rel:selectedRel, note });
+    saveState(); closeModal('ec-modalEdge'); render();
+  }
+
+  // ── layout ──
+  function toggleClusters() {
+    showClusters = !showClusters;
+    document.getElementById('ec-clusterBtn').classList.toggle('active-ec', showClusters);
+    renderCanvas();
+  }
+  function autoLayout() {
+    const vis = visibleNodes();
+    const cols = Math.ceil(Math.sqrt(vis.length));
+    vis.forEach((n,i) => { n.x=80+(i%cols)*210; n.y=80+Math.floor(i/cols)*130; });
+    saveState(); renderCanvas();
+  }
+  function setTool(t) {
+    tool = t;
+    document.getElementById('ec-toolSelect').classList.toggle('active-ec', t==='select');
+    document.getElementById('ec-toolEdge').classList.toggle('active-ec', t==='edge');
+    document.getElementById('ec-canvas').style.cursor = t==='edge' ? 'crosshair' : 'default';
+  }
+
+  // ── export ──
+  function exportData() {
+    const blob = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download='ecosystem.json'; a.click();
+  }
+
+  return {
+    init() {
+      loadState();
+      canvas = makeCanvas({
+        svgId:'ec-canvas', zoomGroupId:'ec-zoomGroup',
+        edgesId:'ec-edgesLayer', nodesId:'ec-nodesLayer', clustersId:'ec-clustersLayer',
+        getNode, renderCanvas, saveState,
+      });
+      document.getElementById('ec-p_tagInput').addEventListener('keydown', e => { if(e.key==='Enter') addPanelTag(); });
+      document.getElementById('ec-clusterBtn').classList.add('active-ec');
+      render();
+    },
+    selectIndustry, openAddIndustry, saveIndustry,
+    openAddNode, saveNewNode,
+    saveNodePanel, closePanel, deleteCurrentNode, addPanelTag,
+    selectRel, saveEdge,
+    toggleClusters, autoLayout, setTool, exportData,
+    zoomIn()    { canvas.zoomIn(); },
+    zoomOut()   { canvas.zoomOut(); },
+    resetView() { canvas.resetView(); },
+    jumpToIndustry(iid) { selIndId = iid || 'all'; render(); },
+    _ctxAddEdge() {
+      if (!ctxNid) return;
+      edgeFromId = ctxNid;
+      document.getElementById('ec-edgeFromName').textContent = getNode(ctxNid)?.name;
+      selectedRel = 'collab';
+      document.querySelectorAll('#ec-relBtns .rel-btn').forEach(b => b.classList.toggle('sel', b.dataset.rel==='collab'));
+      _fillEdgeTo(ctxNid);
+      openModal('ec-modalEdge');
+    },
+    _ctxEdit()   { if (ctxNid) openNodeEditPanel(ctxNid); },
+    _ctxDelete() { if (ctxNid) _deleteNode(ctxNid); },
+    _ctxEditEdge(eid) {
+      const e = state.edges.find(e=>e.id===eid); if(!e) return;
+      const fromNode = getNode(e.fromId), toNode = getNode(e.toId);
+      document.getElementById('ec-editEdgeLabel').textContent =
+        `${fromNode?fromNode.name:'?'} → ${toNode?toNode.name:'?'}`;
+      document.getElementById('ec-ee_note').value = e.note||'';
+      document.querySelectorAll('#ec-editRelBtns .rel-btn').forEach(b=>{
+        b.classList.toggle('sel', b.dataset.rel===e.rel);
+      });
+      document.getElementById('ec-modalEdgeEdit').dataset.eid = eid;
+      openModal('ec-modalEdgeEdit');
+    },
+    _saveEditEdge() {
+      const eid = document.getElementById('ec-modalEdgeEdit').dataset.eid;
+      const e = state.edges.find(e=>e.id===eid); if(!e) return;
+      const selBtn = document.querySelector('#ec-editRelBtns .rel-btn.sel');
+      e.rel  = selBtn ? selBtn.dataset.rel : e.rel;
+      e.note = document.getElementById('ec-ee_note').value.trim();
+      saveState(); closeModal('ec-modalEdgeEdit'); renderCanvas();
+    },
+    _deleteEditingEdge() {
+      const eid = document.getElementById('ec-modalEdgeEdit').dataset.eid;
+      state.edges = state.edges.filter(e=>e.id!==eid);
+      saveState(); closeModal('ec-modalEdgeEdit'); renderCanvas();
+    },
+    _selectEditRel(btn) {
+      document.querySelectorAll('#ec-editRelBtns .rel-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    },
+    _ctxDeleteEdge(eid) { state.edges=state.edges.filter(e=>e.id!==eid); saveState();renderCanvas(); },
+    closeEdgePanel,
+    _epSelRel(btn) {
+      document.querySelectorAll('#ec-ep-relBtns .rel-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    },
+    _epSave() {
+      const e = state.edges.find(e=>e.id===_epEid); if(!e) return;
+      const sb = document.querySelector('#ec-ep-relBtns .rel-btn.sel');
+      e.rel  = sb ? sb.dataset.rel : e.rel;
+      e.note = document.getElementById('ec-ep-note').value.trim();
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _epDelete() {
+      if(!_epEid) return;
+      if(!confirm('이 관계를 삭제할까요?')) return;
+      state.edges = state.edges.filter(e=>e.id!==_epEid);
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _removeTag(i)   { panelTags.splice(i,1); renderPanelTags(panelTags); },
+    _renameIndustry(iid) {
+      const ind = state.industries.find(i=>i.id===iid); if(!ind) return;
+      const newName = prompt('산업명 변경:', ind.name);
+      if (newName && newName.trim()) {
+        ind.name = newName.trim();
+        // also suggest new emoji if user wants
+        const newEmoji = prompt('이모지 변경 (비워두면 자동 추천):', ind.icon||'');
+        if (newEmoji !== null) ind.icon = newEmoji.trim() || _suggestEmoji(ind.name);
+        saveState(); render();
+      }
+    },
+    _copyIndustry(iid) {
+      const ind = state.industries.find(i=>i.id===iid); if(!ind) return;
+      const newName = prompt('복사할 산업명:', ind.name + ' (복사)');
+      if (!newName || !newName.trim()) return;
+      const newInd = { id: uid(), name: newName.trim(), icon: ind.icon };
+      state.industries.push(newInd);
+      // copy all nodes that belong to this industry, offset them
+      const srcNodes = state.nodes.filter(n=>n.industryId===iid);
+      const offsetX = 240, offsetY = 0;
+      const idMap = {};
+      srcNodes.forEach(n => {
+        const newId = uid();
+        idMap[n.id] = newId;
+        state.nodes.push({ ...JSON.parse(JSON.stringify(n)), id: newId, industryId: newInd.id, x: (n.x||80)+offsetX, y: (n.y||80)+offsetY });
+      });
+      // copy edges between copied nodes
+      state.edges.filter(e=>idMap[e.fromId]&&idMap[e.toId]).forEach(e=>{
+        state.edges.push({ ...e, id: uid(), fromId: idMap[e.fromId], toId: idMap[e.toId] });
+      });
+      saveState(); render();
+      alert(`✅ 산업 "${ind.name}"을 "${newName.trim()}"으로 복사했습니다. (노드 ${srcNodes.length}개 포함)`);
+    },
+    _suggestEmojiPreview() {
+      const name = document.getElementById('ec-m_indName').value;
+      const icon = document.getElementById('ec-m_indIcon');
+      if (!icon.value) icon.placeholder = _suggestEmoji(name);
+    },
+    _openResearch() { const n=getNode(currentNodeId); if(n) window.open(RESEARCH_BASE+'#'+encodeURIComponent(n.name),'_blank'); },
+    _openEdit()     { closePopup(); openNodeEditPanel(currentNodeId); },
+    _openEdgeFromPopup() {
+      closePopup(); edgeFromId=currentNodeId;
+      document.getElementById('ec-edgeFromName').textContent=getNode(currentNodeId)?.name;
+      selectedRel='collab';
+      document.querySelectorAll('#ec-relBtns .rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel==='collab'));
+      _fillEdgeTo(currentNodeId); openModal('ec-modalEdge');
+    },
+    _flashNode(nid) {
+      _flashNid = nid;
+      selIndId = 'all';
+      render();
+      setTimeout(() => { _flashNid = null; renderCanvas(); }, 1600);
+    },
+  };
+})();
+
+// ──────────────────────────────────────────────
+//  POLICY / GEO MODULE
+// ──────────────────────────────────────────────
+const PO = (() => {
+  // state
+  let state = { regions: [], nodes: [], edges: [] };
+  // node: { id, title, type, regionId, cluster, body, source, tags, x, y, w, h }
+  // edge: { id, fromId, toId, rel, note }
+  // region: { id, name, icon, color }
+  let selRegionId = 'all';
+  let currentNodeId = null;
+  let edgeFromId = null;
+  let tool = 'select';
+  let panelTags = [];
+  let showClusters = true;
+  let selectedRel = 'support';
+  let _flashNid = null;
+  let canvas;
+  let ctxNid = null;
+
+  const REL_COLORS = { support:'#34d399', tension:'#f87171', compete:'#fb923c', alliance:'#fbbf24', neutral:'#94a3b8' };
+  const NODE_CARD_W = 200, NODE_CARD_H = 110; // default card size
+  const TYPE_COLORS = { policy:'#f59e0b', country:'#60a5fa', agenda:'#34d399', industry:'#a78bfa' };
+  const TYPE_ICONS  = { policy:'📋', country:'🌏', agenda:'📌', industry:'🏭' };
+
+  function saveState() { saveLS('po_data', state); }
+  function loadState() { state = loadLS('po_data', { regions:[], nodes:[], edges:[] }); }
+  function uid() { return 'p'+Date.now().toString(36)+Math.random().toString(36).substr(2,5); }
+  function getNode(nid) { return state.nodes.find(n=>n.id===nid); }
+  function getRegionColor(rid) { const r=state.regions.find(r=>r.id===rid); return r?r.color:'#f59e0b'; }
+  function getRegionName(rid)  { const r=state.regions.find(r=>r.id===rid); return r?r.name:'미분류'; }
+  function visibleNodes() { return selRegionId==='all'?state.nodes:state.nodes.filter(n=>n.regionId===selRegionId); }
+
+  // ── sidebar ──
+  function renderSidebar() {
+    const list = document.getElementById('po-regionList');
+    list.querySelectorAll('[data-rid]:not([data-rid="all"])').forEach(el=>el.remove());
+    document.getElementById('po-countAll').textContent = state.nodes.length;
+    list.querySelector('[data-rid="all"]').className = 'list-item'+(selRegionId==='all'?' active-po':'');
+
+    state.regions.forEach(r => {
+      const cnt = state.nodes.filter(n=>n.regionId===r.id).length;
+      const div = document.createElement('div');
+      div.className = 'list-item'+(selRegionId===r.id?' active-po':'');
+      div.dataset.rid = r.id;
+      div.innerHTML = `
+        <div class="list-icon">${r.icon||'🌍'}</div>
+        <div class="list-name">${r.name}</div>
+        <div class="list-count">${cnt}</div>
+        <span class="list-rename-btn" title="이름 변경" onclick="event.stopPropagation();PO._renameRegion('${r.id}')">✎</span>
+      `;
+      div.onclick = ()=>selectRegion(r.id);
+      list.appendChild(div);
+    });
+  }
+
+  // ── canvas ──
+  function renderCanvas() {
+    const clustersL = document.getElementById('po-clustersLayer');
+    const edgesL    = document.getElementById('po-edgesLayer');
+    const nodesL    = document.getElementById('po-nodesLayer');
+    if(!clustersL||!edgesL||!nodesL) return;
+    clustersL.innerHTML=''; edgesL.innerHTML=''; nodesL.innerHTML='';
+
+    const vis = visibleNodes();
+    const visIds = new Set(vis.map(n=>n.id));
+    const visEdges = state.edges.filter(e=>visIds.has(e.fromId)&&visIds.has(e.toId));
+
+    // clusters (同 cluster 값끼리)
+    if (showClusters) {
+      const cmap = {};
+      vis.forEach(n=>{ if(n.cluster){ (cmap[n.cluster]=cmap[n.cluster]||[]).push(n); }});
+      const CLUSTER_PALETTE=['#1e3a1a','#1a2a3a','#2d1b12','#1a1a2d','#2a2010'];
+      const STROKE_PALETTE =['#34d399','#60a5fa','#fb923c','#a78bfa','#fbbf24'];
+      Object.entries(cmap).forEach(([name,nodes],ci)=>{
+        if(nodes.length<1) return;
+        const pad=40;
+        const xs=nodes.map(n=>(n.x||80)+(n.w||NODE_CARD_W)/2);
+        const ys=nodes.map(n=>(n.y||80)+(n.h||NODE_CARD_H)/2);
+        const minX=Math.min(...xs)-pad, maxX=Math.max(...xs)+(n=>n.w||NODE_CARD_W)(nodes[0])+pad;
+        const minY=Math.min(...ys)-44,  maxY=Math.max(...ys)+(n=>n.h||NODE_CARD_H)(nodes[0])+pad;
+        const bgColor=CLUSTER_PALETTE[ci%CLUSTER_PALETTE.length];
+        const strokeColor=STROKE_PALETTE[ci%STROKE_PALETTE.length];
+
+        const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        bg.setAttribute('x',minX); bg.setAttribute('y',minY);
+        bg.setAttribute('width',maxX-minX); bg.setAttribute('height',maxY-minY);
+        bg.setAttribute('rx','20'); bg.setAttribute('fill',bgColor); bg.setAttribute('opacity','0.35');
+        clustersL.appendChild(bg);
+
+        const border=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        border.setAttribute('x',minX); border.setAttribute('y',minY);
+        border.setAttribute('width',maxX-minX); border.setAttribute('height',maxY-minY);
+        border.setAttribute('rx','20'); border.setAttribute('fill','none');
+        border.setAttribute('stroke',strokeColor); border.setAttribute('stroke-width','1.8');
+        border.setAttribute('stroke-dasharray','7,4'); border.setAttribute('opacity','0.65');
+        clustersL.appendChild(border);
+
+        const lw=name.length*8+20;
+        const lbg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        lbg.setAttribute('x',minX+8); lbg.setAttribute('y',minY-11);
+        lbg.setAttribute('width',lw); lbg.setAttribute('height',20); lbg.setAttribute('rx','10');
+        lbg.setAttribute('fill',strokeColor); lbg.setAttribute('opacity','0.85');
+        clustersL.appendChild(lbg);
+
+        const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
+        lt.setAttribute('x',minX+8+lw/2); lt.setAttribute('y',minY+3);
+        lt.setAttribute('text-anchor','middle'); lt.setAttribute('font-size','11');
+        lt.setAttribute('font-weight','700'); lt.setAttribute('fill','#fff');
+        lt.setAttribute('font-family','Pretendard,sans-serif'); lt.setAttribute('pointer-events','none');
+        lt.textContent=name;
+        clustersL.appendChild(lt);
+      });
+    }
+
+    // edges
+    visEdges.forEach(e=>{
+      const from=getNode(e.fromId), to=getNode(e.toId); if(!from||!to) return;
+      const fw=from.w||NODE_CARD_W, fh=from.h||NODE_CARD_H;
+      const tw=to.w||NODE_CARD_W,   th=to.h||NODE_CARD_H;
+      const x1=(from.x||80)+fw/2, y1=(from.y||80)+fh/2;
+      const x2=(to.x||80)+tw/2,   y2=(to.y||80)+th/2;
+      const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy)||1;
+      const ux=dx/len, uy=dy/len;
+      const ex1=x1+ux*(fw/2+6), ey1=y1+uy*(fh/2+6);
+      const ex2=x2-ux*(tw/2+6), ey2=y2-uy*(th/2+6);
+      const qcx=(ex1+ex2)/2-uy*32, qcy=(ey1+ey2)/2+ux*32;
+      const color=REL_COLORS[e.rel]||REL_COLORS.neutral;
+
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      path.setAttribute('stroke',color); path.setAttribute('stroke-width','2');
+      path.setAttribute('fill','none'); path.setAttribute('opacity','0.8');
+      if(e.rel==='tension') path.setAttribute('stroke-dasharray','6,4');
+      path.style.cursor='pointer';
+      path.addEventListener('click',ev=>{ev.stopPropagation();openEdgePanel(e.id);});
+      edgesL.appendChild(path);
+
+      // hit area
+      const hp=document.createElementNS('http://www.w3.org/2000/svg','path');
+      hp.setAttribute('d',`M${ex1},${ey1} Q${qcx},${qcy} ${ex2},${ey2}`);
+      hp.setAttribute('stroke','transparent'); hp.setAttribute('stroke-width','16'); hp.setAttribute('fill','none');
+      hp.style.cursor='pointer';
+      hp.addEventListener('click',ev=>{ev.stopPropagation();openEdgePanel(e.id);});
+      edgesL.appendChild(hp);
+
+      // mid arrows
+      function bPt(t){const m=1-t;return{x:m*m*ex1+2*m*t*qcx+t*t*ex2,y:m*m*ey1+2*m*t*qcy+t*t*ey2};}
+      function bTan(t){const dt=0.01,a=bPt(Math.max(0,t-dt)),b=bPt(Math.min(1,t+dt)),dl=Math.sqrt((b.x-a.x)**2+(b.y-a.y)**2)||1;return{tx:(b.x-a.x)/dl,ty:(b.y-a.y)/dl};}
+      [0.38,0.68].forEach(t=>{
+        const pt=bPt(t),tan=bTan(t),aL=10,aW=5;
+        const ax=pt.x+tan.tx*aL,ay=pt.y+tan.ty*aL;
+        const bx1=pt.x-tan.ty*aW,by1=pt.y+tan.tx*aW;
+        const bx2=pt.x+tan.ty*aW,by2=pt.y-tan.tx*aW;
+        const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        arr.setAttribute('points',`${ax},${ay} ${bx1},${by1} ${bx2},${by2}`);
+        arr.setAttribute('fill',color); arr.setAttribute('opacity','0.9');
+        arr.style.pointerEvents='none';
+        edgesL.appendChild(arr);
+      });
+
+      // edge label
+      if(e.note){
+        const mp=bPt(0.5), noteShort=e.note.length>14?e.note.slice(0,14)+'…':e.note;
+        const rw=noteShort.length*7+14,rh=15;
+        const pill=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        pill.setAttribute('x',mp.x-rw/2); pill.setAttribute('y',mp.y-rh/2-1);
+        pill.setAttribute('width',rw); pill.setAttribute('height',rh); pill.setAttribute('rx','7');
+        pill.setAttribute('fill','#0a1220'); pill.setAttribute('stroke',color); pill.setAttribute('stroke-width','0.7');
+        pill.setAttribute('opacity','0.92');
+        edgesL.appendChild(pill);
+        const lt=document.createElementNS('http://www.w3.org/2000/svg','text');
+        lt.setAttribute('x',mp.x); lt.setAttribute('y',mp.y+4.5);
+        lt.setAttribute('text-anchor','middle'); lt.setAttribute('font-size','10');
+        lt.setAttribute('fill',color); lt.setAttribute('font-family','Pretendard,sans-serif');
+        lt.style.pointerEvents='none';
+        lt.textContent=noteShort;
+        edgesL.appendChild(lt);
+      }
+    });
+
+    // nodes as foreignObject cards
+    vis.forEach(n=>{
+      const w=n.w||NODE_CARD_W, h=n.h||NODE_CARD_H;
+      const x=n.x||80, y=n.y||80;
+      const typeColor=TYPE_COLORS[n.type]||'#f59e0b';
+      const isFlash=n.id===_flashNid;
+      const isSelected=n.id===currentNodeId;
+
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('transform',`translate(${x},${y})`);
+
+      // shadow glow when selected/flash
+      if(isFlash||isSelected){
+        const glow=document.createElementNS('http://www.w3.org/2000/svg','rect');
+        glow.setAttribute('x','-4'); glow.setAttribute('y','-4');
+        glow.setAttribute('width',w+8); glow.setAttribute('height',h+8);
+        glow.setAttribute('rx','14'); glow.setAttribute('fill',typeColor); glow.setAttribute('opacity','0.12');
+        glow.setAttribute('filter','url(#po-glow)');
+        g.appendChild(glow);
+      }
+
+      // card background rect
+      const bg=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('width',w); bg.setAttribute('height',h); bg.setAttribute('rx','10');
+      bg.setAttribute('fill', n.type==='country'?'#08101a': n.type==='agenda'?'#08120e': n.type==='industry'?'#100a1a':'#12100a');
+      bg.setAttribute('stroke', isFlash?'#fff': isSelected?typeColor+'cc':typeColor+'66');
+      bg.setAttribute('stroke-width', isSelected||isFlash?'2':'1.5');
+      g.appendChild(bg);
+
+      // type stripe (left bar)
+      const bar=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bar.setAttribute('x','0'); bar.setAttribute('y','0'); bar.setAttribute('width','4'); bar.setAttribute('height',h);
+      bar.setAttribute('rx','2'); bar.setAttribute('fill',typeColor);
+      g.appendChild(bar);
+
+      // foreignObject for text content
+      const fo=document.createElementNS('http://www.w3.org/2000/svg','foreignObject');
+      fo.setAttribute('x','8'); fo.setAttribute('y','6');
+      fo.setAttribute('width',w-14); fo.setAttribute('height',h-12);
+
+      const div=document.createElement('div');
+      div.setAttribute('xmlns','http://www.w3.org/1999/xhtml');
+      div.style.cssText=`width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;gap:3px;`;
+
+      // title row
+      const titleRow=document.createElement('div');
+      titleRow.style.cssText=`display:flex;align-items:flex-start;gap:4px;`;
+      const icon=document.createElement('span');
+      icon.style.cssText=`font-size:11px;flex-shrink:0;line-height:1.3;`;
+      icon.textContent=TYPE_ICONS[n.type]||'📋';
+      const titleEl=document.createElement('div');
+      titleEl.style.cssText=`font-size:11px;font-weight:700;color:#f0e8d0;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-family:Pretendard,sans-serif;`;
+      titleEl.textContent=n.title||'(제목 없음)';
+      titleRow.appendChild(icon); titleRow.appendChild(titleEl);
+      div.appendChild(titleRow);
+
+      // body text
+      if(n.body){
+        const bodyEl=document.createElement('div');
+        bodyEl.style.cssText=`font-size:9.5px;color:#7a8898;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;font-family:Pretendard,sans-serif;flex:1;`;
+        bodyEl.textContent=n.body;
+        div.appendChild(bodyEl);
+      }
+
+      // tags
+      if(n.tags&&n.tags.length){
+        const tagsRow=document.createElement('div');
+        tagsRow.style.cssText=`display:flex;flex-wrap:wrap;gap:2px;margin-top:auto;`;
+        n.tags.slice(0,3).forEach(t=>{
+          const tag=document.createElement('span');
+          tag.style.cssText=`background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:1px 5px;font-size:8.5px;color:#fbbf24;font-family:Pretendard,sans-serif;white-space:nowrap;`;
+          tag.textContent=t;
+          tagsRow.appendChild(tag);
+        });
+        div.appendChild(tagsRow);
+      }
+
+      fo.appendChild(div);
+      g.appendChild(fo);
+
+      // region badge (top right)
+      if(n.regionId){
+        const r=state.regions.find(r=>r.id===n.regionId);
+        if(r){
+          const btext=document.createElementNS('http://www.w3.org/2000/svg','text');
+          btext.setAttribute('x',w-6); btext.setAttribute('y','14');
+          btext.setAttribute('text-anchor','end'); btext.setAttribute('font-size','9');
+          btext.setAttribute('fill',r.color||'#f59e0b'); btext.setAttribute('opacity','0.7');
+          btext.setAttribute('font-family','Pretendard,sans-serif');
+          btext.textContent=(r.icon||'')+(r.name.length>6?r.name.slice(0,6)+'…':r.name);
+          g.appendChild(btext);
+        }
+      }
+
+      // resize handle (bottom-right corner)
+      const rh=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      rh.setAttribute('x',w-10); rh.setAttribute('y',h-10);
+      rh.setAttribute('width','10'); rh.setAttribute('height','10'); rh.setAttribute('rx','2');
+      rh.setAttribute('fill',typeColor); rh.setAttribute('opacity','0.45'); rh.style.cursor='se-resize';
+      rh.addEventListener('mousedown',ev=>{ev.stopPropagation();_startResize(ev,n.id);});
+      g.appendChild(rh);
+
+      // events
+      g.addEventListener('mousedown',ev=>{
+        if(ev.target===rh) return;
+        ev.stopPropagation(); _startDrag(ev,n.id);
+      });
+      g.addEventListener('click',ev=>{
+        if(canvas&&canvas.wasRecentlyDragging()) return;
+        ev.stopPropagation(); openNodeEditPanel(n.id);
+      });
+      g.addEventListener('contextmenu',ev=>{ev.preventDefault();showNodeCtx(ev,n.id);});
+
+      nodesL.appendChild(g);
+    });
+  }
+
+  // drag/resize for PO nodes
+  let _dragState=null, _resizeState=null;
+
+  function _getCanvasTR(){
+    const zg=document.getElementById('po-zoomGroup');
+    const tr=new DOMMatrix(getComputedStyle(zg).transform);
+    return{zoom:tr.a||1,panX:tr.e||0,panY:tr.f||0};
+  }
+  function _startDrag(ev,nid){
+    const n=getNode(nid); if(!n) return;
+    const {zoom,panX,panY}=_getCanvasTR();
+    const svgR=document.getElementById('po-canvas').getBoundingClientRect();
+    _dragState={nid,offX:ev.clientX-(n.x*zoom+panX+svgR.left),offY:ev.clientY-(n.y*zoom+panY+svgR.top),zoom,panX,panY,svgR};
+  }
+  function _startResize(ev,nid){
+    const n=getNode(nid); if(!n) return;
+    const {zoom}=_getCanvasTR();
+    _resizeState={nid,zoom,startMX:ev.clientX,startMY:ev.clientY,startW:n.w||NODE_CARD_W,startH:n.h||NODE_CARD_H};
+  }
+
+  function render() { renderSidebar(); renderCanvas(); }
+
+  // context menus
+  function showNodeCtx(ev,nid){
+    ctxNid=nid;
+    const m=document.getElementById('ctxMenu');
+    m.innerHTML=`
+      <div class="ctx-item" onclick="PO._ctxAddEdge()">↗ 관계 연결</div>
+      <div class="ctx-item" onclick="PO._ctxEdit()">✏️ 편집</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="PO._ctxDelete()">🗑 삭제</div>
+    `;
+    m.style.display='block'; m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+    ev.stopPropagation();
+  }
+
+  let _epEid = null;
+  function openEdgePanel(eid) {
+    const e=state.edges.find(e=>e.id===eid); if(!e) return;
+    _epEid=eid;
+    const fn=getNode(e.fromId), tn=getNode(e.toId);
+    document.getElementById('po-ep-from').textContent = fn?fn.title:'?';
+    document.getElementById('po-ep-to').textContent   = tn?tn.title:'?';
+    document.getElementById('po-ep-note').value = e.note||'';
+    document.querySelectorAll('#po-ep-relBtns .po-rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel===e.rel));
+    document.getElementById('po-edgePanel').classList.add('open');
+  }
+  function closeEdgePanel() {
+    _epEid=null;
+    document.getElementById('po-edgePanel').classList.remove('open');
+  }
+
+  function showEdgeCtx(ev,eid){
+    const m=document.getElementById('ctxMenu');
+    m.innerHTML=`
+      <div class="ctx-item" onclick="PO._ctxEditEdge('${eid}')">✏️ 관계 편집</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="PO._ctxDeleteEdge('${eid}')">🗑 삭제</div>
+    `;
+    m.style.display='block'; m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+    ev.stopPropagation();
+  }
+
+  // node edit panel
+  function _fillRegionSel(selId){
+    const ids=['po-m_nodeRegion','po-p_region'];
+    ids.forEach(id=>{
+      const el=document.getElementById(id); if(!el) return;
+      el.innerHTML='<option value="">미분류</option>';
+      state.regions.forEach(r=>{el.innerHTML+=`<option value="${r.id}">${r.icon||''} ${r.name}</option>`;});
+      if(selId) el.value=selId;
+    });
+  }
+  function openNodeEditPanel(nid){
+    currentNodeId=nid;
+    const n=getNode(nid); if(!n) return;
+    _fillRegionSel(n.regionId);
+    document.getElementById('po-p_title').value=n.title||'';
+    document.getElementById('po-p_type').value=n.type||'policy';
+    document.getElementById('po-p_cluster').value=n.cluster||'';
+    document.getElementById('po-p_body').value=n.body||'';
+    document.getElementById('po-p_source').value=n.source||'';
+    renderPanelTags(n.tags||[]);
+    document.getElementById('po-panelTitle').textContent=(n.title||'카드')+' 편집';
+    document.getElementById('po-rightPanel').classList.add('open');
+    renderCanvas(); // re-render to show selection
+  }
+  function closePanel(){ currentNodeId=null; document.getElementById('po-rightPanel').classList.remove('open'); renderCanvas(); }
+
+  function renderPanelTags(tags){
+    panelTags=[...(tags||[])];
+    const area=document.getElementById('po-p_tags'); area.innerHTML='';
+    panelTags.forEach((t,i)=>{
+      const d=document.createElement('div');
+      d.className='tag'; d.style.background='rgba(245,158,11,0.1)'; d.style.border='1px solid rgba(245,158,11,0.25)'; d.style.color='#fbbf24'; d.style.borderRadius='20px'; d.style.padding='3px 8px'; d.style.fontSize='0.71rem'; d.style.display='flex'; d.style.alignItems='center'; d.style.gap='3px';
+      d.innerHTML=`${t} <span class="tag-del" onclick="PO._removeTag(${i})">✕</span>`;
+      area.appendChild(d);
+    });
+  }
+  function addPanelTag(){
+    const v=document.getElementById('po-p_tagInput').value.trim(); if(!v) return;
+    panelTags.push(v); document.getElementById('po-p_tagInput').value='';
+    renderPanelTags(panelTags);
+  }
+  function saveNodePanel(){
+    const n=getNode(currentNodeId); if(!n) return;
+    n.title   =document.getElementById('po-p_title').value.trim()||n.title;
+    n.type    =document.getElementById('po-p_type').value;
+    n.regionId=document.getElementById('po-p_region').value;
+    n.cluster =document.getElementById('po-p_cluster').value.trim();
+    n.body    =document.getElementById('po-p_body').value.trim();
+    n.source  =document.getElementById('po-p_source').value.trim();
+    n.tags    =[...panelTags];
+    saveState(); closePanel(); render();
+  }
+  function deleteCurrentNode(){
+    if(!currentNodeId){alert('삭제할 카드가 없습니다.');return;}
+    if(!confirm('이 카드와 관련 연결도 삭제됩니다.')) return;
+    _deleteNode(currentNodeId); currentNodeId=null; closePanel();
+  }
+  function _deleteNode(nid){
+    state.nodes=state.nodes.filter(n=>n.id!==nid);
+    state.edges=state.edges.filter(e=>e.fromId!==nid&&e.toId!==nid);
+    saveState(); render();
+  }
+
+  // edge
+  function selectRel(btn){
+    selectedRel=btn.dataset.rel;
+    document.querySelectorAll('#po-relBtns .po-rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel===selectedRel));
+  }
+  function _fillEdgeTo(fromId){
+    const sel=document.getElementById('po-m_edgeTo'); sel.innerHTML='';
+    state.nodes.filter(n=>n.id!==fromId).forEach(n=>{sel.innerHTML+=`<option value="${n.id}">${TYPE_ICONS[n.type]||''} ${n.title}</option>`;});
+  }
+  function saveEdge(){
+    const toId=document.getElementById('po-m_edgeTo').value;
+    const note=document.getElementById('po-m_edgeNote').value.trim();
+    if(!edgeFromId||!toId) return;
+    state.edges.push({id:uid(),fromId:edgeFromId,toId,rel:selectedRel,note});
+    saveState(); closeModal('po-modalEdge'); render();
+  }
+
+  // layout
+  function toggleClusters(){
+    showClusters=!showClusters;
+    document.getElementById('po-clusterBtn').classList.toggle('active-po',showClusters);
+    renderCanvas();
+  }
+  function autoLayout(){
+    const vis=visibleNodes();
+    const cols=Math.ceil(Math.sqrt(vis.length));
+    vis.forEach((n,i)=>{
+      n.x=80+(i%cols)*240; n.y=80+Math.floor(i/cols)*160;
+    });
+    saveState(); renderCanvas();
+  }
+  function setTool(t){
+    tool=t;
+    document.getElementById('po-toolSelect').classList.toggle('active-po',t==='select');
+    document.getElementById('po-toolEdge').classList.toggle('active-po',t==='edge');
+    document.getElementById('po-canvas').style.cursor=t==='edge'?'crosshair':'default';
+  }
+  function exportData(){
+    const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='policy_map.json'; a.click();
+  }
+
+  // region management
+  function selectRegion(rid){ selRegionId=rid; render(); }
+  function openAddRegion(){
+    document.getElementById('po-m_regionName').value='';
+    document.getElementById('po-m_regionIcon').value='';
+    openModal('po-modalRegion');
+  }
+  function saveRegion(){
+    const name=document.getElementById('po-m_regionName').value.trim();
+    if(!name) return alert('이름을 입력하세요');
+    const icon=document.getElementById('po-m_regionIcon').value||'🌍';
+    const color=document.getElementById('po-m_regionColor').value||'#f59e0b';
+    state.regions.push({id:uid(),name,icon,color});
+    saveState(); closeModal('po-modalRegion'); render();
+  }
+
+  // node management
+  function openAddNode(){
+    _fillRegionSel(selRegionId!=='all'?selRegionId:'');
+    document.getElementById('po-m_nodeTitle').value='';
+    openModal('po-modalNode');
+  }
+  function saveNewNode(){
+    const title=document.getElementById('po-m_nodeTitle').value.trim();
+    if(!title) return alert('제목을 입력하세요');
+    const type=document.getElementById('po-m_nodeType').value;
+    const regionId=document.getElementById('po-m_nodeRegion').value;
+    const vis=visibleNodes();
+    const cols=Math.ceil(Math.sqrt(vis.length+1));
+    const i=vis.length;
+    state.nodes.push({id:uid(),title,type,regionId,cluster:'',body:'',source:'',tags:[],
+      x:80+(i%cols)*240, y:80+Math.floor(i/cols)*160, w:NODE_CARD_W, h:NODE_CARD_H});
+    saveState(); closeModal('po-modalNode'); render();
+  }
+
+  return {
+    init(){
+      loadState();
+      canvas=makeCanvas({
+        svgId:'po-canvas',zoomGroupId:'po-zoomGroup',
+        edgesId:'po-edgesLayer',nodesId:'po-nodesLayer',clustersId:'po-clustersLayer',
+        getNode, renderCanvas, saveState,
+      });
+      document.getElementById('po-p_tagInput').addEventListener('keydown',e=>{if(e.key==='Enter') addPanelTag();});
+      document.getElementById('po-clusterBtn').classList.add('active-po');
+
+      // PO-specific drag/resize
+      window.addEventListener('mousemove',ev=>{
+        if(_dragState){
+          const n=getNode(_dragState.nid); if(!n) return;
+          const {zoom,panX,panY,svgR,offX,offY}=_dragState;
+          n.x=(ev.clientX-svgR.left-panX-offX)/zoom;
+          n.y=(ev.clientY-svgR.top-panY-offY)/zoom;
+          renderCanvas();
+        }
+        if(_resizeState){
+          const n=getNode(_resizeState.nid); if(!n) return;
+          const {zoom,startMX,startMY,startW,startH}=_resizeState;
+          n.w=Math.max(140,startW+(ev.clientX-startMX)/zoom);
+          n.h=Math.max(80, startH+(ev.clientY-startMY)/zoom);
+          renderCanvas();
+        }
+      });
+      window.addEventListener('mouseup',()=>{
+        if(_dragState||_resizeState){
+          saveState(); _dragState=null; _resizeState=null;
+        }
+      });
+      render();
+    },
+    selectRegion, openAddRegion, saveRegion,
+    openAddNode, saveNewNode,
+    saveNodePanel, closePanel, deleteCurrentNode, addPanelTag,
+    selectRel, saveEdge,
+    toggleClusters, autoLayout, setTool, exportData,
+    zoomIn(){canvas.zoomIn();}, zoomOut(){canvas.zoomOut();}, resetView(){canvas.resetView();},
+    _ctxAddEdge(){
+      if(!ctxNid) return;
+      edgeFromId=ctxNid;
+      const n=getNode(ctxNid);
+      document.getElementById('po-edgeFromName').textContent=n?n.title:'?';
+      selectedRel='support';
+      document.querySelectorAll('#po-relBtns .po-rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel==='support'));
+      _fillEdgeTo(ctxNid); openModal('po-modalEdge');
+    },
+    _ctxEdit(){ if(ctxNid) openNodeEditPanel(ctxNid); },
+    _ctxDelete(){ if(ctxNid) _deleteNode(ctxNid); },
+    _ctxEditEdge(eid){
+      const e=state.edges.find(e=>e.id===eid); if(!e) return;
+      const fn=getNode(e.fromId), tn=getNode(e.toId);
+      document.getElementById('po-editEdgeLabel').textContent=`${fn?fn.title:'?'} → ${tn?tn.title:'?'}`;
+      document.getElementById('po-ee_note').value=e.note||'';
+      document.querySelectorAll('#po-editRelBtns .po-rel-btn').forEach(b=>b.classList.toggle('sel',b.dataset.rel===e.rel));
+      document.getElementById('po-modalEdgeEdit').dataset.eid=eid;
+      openModal('po-modalEdgeEdit');
+    },
+    _saveEditEdge(){
+      const eid=document.getElementById('po-modalEdgeEdit').dataset.eid;
+      const e=state.edges.find(e=>e.id===eid); if(!e) return;
+      const sb=document.querySelector('#po-editRelBtns .po-rel-btn.sel');
+      e.rel=sb?sb.dataset.rel:e.rel;
+      e.note=document.getElementById('po-ee_note').value.trim();
+      saveState(); closeModal('po-modalEdgeEdit'); renderCanvas();
+    },
+    _deleteEditingEdge(){
+      const eid=document.getElementById('po-modalEdgeEdit').dataset.eid;
+      state.edges=state.edges.filter(e=>e.id!==eid);
+      saveState(); closeModal('po-modalEdgeEdit'); renderCanvas();
+    },
+    _selectEditRel(btn){
+      document.querySelectorAll('#po-editRelBtns .po-rel-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    },
+    _ctxDeleteEdge(eid){ state.edges=state.edges.filter(e=>e.id!==eid); saveState(); renderCanvas(); },
+    closeEdgePanel,
+    _epSelRel(btn){
+      document.querySelectorAll('#po-ep-relBtns .po-rel-btn').forEach(b=>b.classList.remove('sel'));
+      btn.classList.add('sel');
+    },
+    _epSave(){
+      const e=state.edges.find(e=>e.id===_epEid); if(!e) return;
+      const sb=document.querySelector('#po-ep-relBtns .po-rel-btn.sel');
+      e.rel =sb?sb.dataset.rel:e.rel;
+      e.note=document.getElementById('po-ep-note').value.trim();
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _epDelete(){
+      if(!_epEid) return;
+      if(!confirm('이 관계를 삭제할까요?')) return;
+      state.edges=state.edges.filter(e=>e.id!==_epEid);
+      saveState(); closeEdgePanel(); renderCanvas();
+    },
+    _removeTag(i){ panelTags.splice(i,1); renderPanelTags(panelTags); },
+    _renameRegion(rid){
+      const r=state.regions.find(r=>r.id===rid); if(!r) return;
+      const n=prompt('지역/섹터 이름 변경:',r.name);
+      if(n&&n.trim()){r.name=n.trim(); saveState(); render();}
+    },
+    _flashNode(nid){
+      _flashNid=nid; selRegionId='all'; render();
+      setTimeout(()=>{_flashNid=null; renderCanvas();},1600);
+    },
+    getState(){ return state; },
+  };
+})();
+// ──────────────────────────────────────────────
+const IMG = (() => {
+  // images: { ow: [...], ec: [...], po: [...] }
+  // each image: { id, src, x, y, w, h }
+  let images = { ow: [], ec: [], po: [] };
+  let _pendingCanvas = null;
+  let _selId = null;
+  let _selCanvas = null;
+  let _dragImg = null; // { id, canvas, offX, offY }
+  let _resizeImg = null; // { id, canvas, startX, startY, startW, startH, corner }
+
+  function saveImages() {
+    try { localStorage.setItem('img_data', JSON.stringify(images)); } catch(e){}
+  }
+  function loadImages() {
+    try { const d=localStorage.getItem('img_data'); if(d) images=JSON.parse(d); } catch(e){}
+  }
+
+  function uid() { return 'img_'+Date.now().toString(36)+Math.random().toString(36).substr(2,5); }
+
+  function getLayer(cv) { return document.getElementById(cv+'-imageLayer'); }
+
+  function renderImages(cv) {
+    const layer = getLayer(cv); if (!layer) return;
+    layer.innerHTML = '';
+    (images[cv]||[]).forEach(img => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('data-imgid', img.id);
+
+      const el = document.createElementNS('http://www.w3.org/2000/svg','image');
+      el.setAttribute('x', img.x); el.setAttribute('y', img.y);
+      el.setAttribute('width', img.w); el.setAttribute('height', img.h);
+      el.setAttribute('href', img.src);
+      el.setAttribute('preserveAspectRatio','xMidYMid meet');
+      el.style.cursor = 'move';
+      g.appendChild(el);
+
+      // move overlay
+      const mv = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      mv.setAttribute('x', img.x); mv.setAttribute('y', img.y);
+      mv.setAttribute('width', img.w); mv.setAttribute('height', img.h);
+      mv.setAttribute('fill','transparent'); mv.setAttribute('cursor','move');
+      mv.addEventListener('mousedown', e => { e.stopPropagation(); _startDrag(e, img.id, cv); });
+      mv.addEventListener('click', e => { e.stopPropagation(); _select(img.id, cv); });
+      mv.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); _showImgCtx(e, img.id, cv); });
+      g.appendChild(mv);
+
+      if (_selId === img.id && _selCanvas === cv) {
+        // selection border
+        const sel = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        sel.setAttribute('x',img.x-1); sel.setAttribute('y',img.y-1);
+        sel.setAttribute('width',img.w+2); sel.setAttribute('height',img.h+2);
+        sel.setAttribute('class','img-sel-rect');
+        g.appendChild(sel);
+        // corner resize handles
+        const corners = [
+          { cx: img.x,       cy: img.y,        dir:'nw' },
+          { cx: img.x+img.w, cy: img.y,        dir:'ne' },
+          { cx: img.x,       cy: img.y+img.h,  dir:'sw' },
+          { cx: img.x+img.w, cy: img.y+img.h,  dir:'se' },
+        ];
+        corners.forEach(c => {
+          const h = document.createElementNS('http://www.w3.org/2000/svg','rect');
+          h.setAttribute('x', c.cx-5); h.setAttribute('y', c.cy-5);
+          h.setAttribute('width','10'); h.setAttribute('height','10');
+          h.setAttribute('rx','2');
+          h.setAttribute('fill','#4f8ef7'); h.setAttribute('stroke','#fff'); h.setAttribute('stroke-width','1.5');
+          h.style.cursor = c.dir+'-resize';
+          h.addEventListener('mousedown', e => { e.stopPropagation(); _startResize(e, img.id, cv, c.dir); });
+          g.appendChild(h);
+        });
+        // delete button (top-right)
+        const delG = document.createElementNS('http://www.w3.org/2000/svg','g');
+        delG.style.cursor='pointer';
+        const delBg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        delBg.setAttribute('cx',img.x+img.w+10); delBg.setAttribute('cy',img.y-10);
+        delBg.setAttribute('r','9'); delBg.setAttribute('fill','#f87171');
+        delG.appendChild(delBg);
+        const delT = document.createElementNS('http://www.w3.org/2000/svg','text');
+        delT.setAttribute('x',img.x+img.w+10); delT.setAttribute('y',img.y-6);
+        delT.setAttribute('text-anchor','middle'); delT.setAttribute('font-size','12');
+        delT.setAttribute('fill','#fff'); delT.setAttribute('font-weight','700');
+        delT.setAttribute('pointer-events','none');
+        delT.textContent='✕';
+        delG.appendChild(delT);
+        delG.addEventListener('click', e => { e.stopPropagation(); _deleteImg(img.id, cv); });
+        g.appendChild(delG);
+      }
+
+      layer.appendChild(g);
+    });
+  }
+
+  function _select(id, cv) {
+    _selId = id; _selCanvas = cv;
+    renderImages(cv);
+  }
+
+  function _deleteImg(id, cv) {
+    images[cv] = (images[cv]||[]).filter(i=>i.id!==id);
+    _selId=null; _selCanvas=null;
+    saveImages(); renderImages(cv);
+  }
+
+  function _showImgCtx(ev, id, cv) {
+    const m = document.getElementById('ctxMenu');
+    m.innerHTML = `
+      <div class="ctx-item" onclick="IMG._deleteFromCtx('${id}','${cv}')">🗑 이미지 삭제</div>
+    `;
+    m.style.display='block';
+    m.style.left=ev.clientX+'px'; m.style.top=ev.clientY+'px';
+    ev.stopPropagation();
+  }
+
+  function _startDrag(ev, id, cv) {
+    _select(id, cv);
+    const img = (images[cv]||[]).find(i=>i.id===id); if(!img) return;
+    // get canvas transform info
+    const svgEl = document.getElementById(cv+'-canvas');
+    const zg = document.getElementById(cv+'-zoomGroup');
+    const tr = new DOMMatrix(getComputedStyle(zg).transform);
+    const zoom = tr.a || 1, panX = tr.e || 0, panY = tr.f || 0;
+    const offX = ev.clientX - (img.x * zoom + panX + svgEl.getBoundingClientRect().left);
+    const offY = ev.clientY - (img.y * zoom + panY + svgEl.getBoundingClientRect().top);
+    _dragImg = { id, cv, offX, offY, zoom, panX, panY, svgRect: svgEl.getBoundingClientRect() };
+  }
+
+  function _startResize(ev, id, cv, corner) {
+    _select(id, cv);
+    const img = (images[cv]||[]).find(i=>i.id===id); if(!img) return;
+    const svgEl = document.getElementById(cv+'-canvas');
+    const zg = document.getElementById(cv+'-zoomGroup');
+    const tr = new DOMMatrix(getComputedStyle(zg).transform);
+    const zoom = tr.a || 1, panX = tr.e || 0, panY = tr.f || 0;
+    _resizeImg = { id, cv, corner, zoom, panX, panY,
+      svgRect: svgEl.getBoundingClientRect(),
+      startMouseX: ev.clientX, startMouseY: ev.clientY,
+      startX: img.x, startY: img.y, startW: img.w, startH: img.h };
+  }
+
+  // global mouse events
+  function onMouseMove(ev) {
+    if (_dragImg) {
+      const { id, cv, offX, offY, zoom, panX, panY, svgRect } = _dragImg;
+      const img = (images[cv]||[]).find(i=>i.id===id); if(!img) return;
+      img.x = (ev.clientX - svgRect.left - panX - offX) / zoom;
+      img.y = (ev.clientY - svgRect.top  - panY - offY) / zoom;
+      renderImages(cv);
+    }
+    if (_resizeImg) {
+      const { id, cv, corner, zoom, startMouseX, startMouseY, startX, startY, startW, startH } = _resizeImg;
+      const img = (images[cv]||[]).find(i=>i.id===id); if(!img) return;
+      const ddx = (ev.clientX - startMouseX) / zoom;
+      const ddy = (ev.clientY - startMouseY) / zoom;
+      const minSz = 30;
+      if (corner==='se') {
+        img.w = Math.max(minSz, startW + ddx);
+        img.h = Math.max(minSz, startH + ddy);
+      } else if (corner==='sw') {
+        img.w = Math.max(minSz, startW - ddx);
+        img.x = startX + startW - img.w;
+        img.h = Math.max(minSz, startH + ddy);
+      } else if (corner==='ne') {
+        img.w = Math.max(minSz, startW + ddx);
+        img.h = Math.max(minSz, startH - ddy);
+        img.y = startY + startH - img.h;
+      } else if (corner==='nw') {
+        img.w = Math.max(minSz, startW - ddx);
+        img.x = startX + startW - img.w;
+        img.h = Math.max(minSz, startH - ddy);
+        img.y = startY + startH - img.h;
+      }
+      renderImages(cv);
+    }
+  }
+  function onMouseUp() {
+    if (_dragImg || _resizeImg) {
+      const cv = (_dragImg||_resizeImg).cv;
+      saveImages();
+      _dragImg = null; _resizeImg = null;
+    }
+  }
+
+  return {
+    init() {
+      loadImages();
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+      // deselect on canvas background click
+      ['ow','ec','po'].forEach(cv => {
+        const svg = document.getElementById(cv+'-canvas');
+        if(svg) svg.addEventListener('click', e => {
+          if (e.target === svg || e.target.id===cv+'-zoomGroup'||e.target.id===cv+'-imageLayer') {
+            _selId=null; _selCanvas=null; renderImages(cv);
+            // close edge panels
+            const ep = document.getElementById(cv+'-edgePanel');
+            if(ep) ep.classList.remove('open');
+          }
+        });
+      });
+    },
+    renderImages,
+    insertImage(cv) {
+      _pendingCanvas = cv;
+      const inp = document.getElementById('img-file-input');
+      inp.value = ''; inp.click();
+    },
+    _onFileSelected(ev) {
+      const file = ev.target.files[0]; if(!file) return;
+      const cv = _pendingCanvas;
+      const reader = new FileReader();
+      reader.onload = e => {
+        // get default placement in current view center
+        const svgEl = document.getElementById(cv+'-canvas');
+        const zg = document.getElementById(cv+'-zoomGroup');
+        const tr = new DOMMatrix(getComputedStyle(zg).transform);
+        const zoom = tr.a||1, panX=tr.e||0, panY=tr.f||0;
+        const svgW = svgEl.clientWidth, svgH = svgEl.clientHeight;
+        const cx = (svgW/2 - panX) / zoom;
+        const cy = (svgH/2 - panY) / zoom;
+        const imgObj = new Image();
+        imgObj.onload = () => {
+          const aspect = imgObj.naturalWidth / (imgObj.naturalHeight||1);
+          const defW = Math.min(200, imgObj.naturalWidth);
+          const defH = defW / aspect;
+          if (!images[cv]) images[cv] = [];
+          const newImg = { id: uid(), src: e.target.result, x: cx-defW/2, y: cy-defH/2, w: defW, h: defH };
+          images[cv].push(newImg);
+          _selId = newImg.id; _selCanvas = cv;
+          saveImages(); renderImages(cv);
+        };
+        imgObj.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    },
+    _deleteFromCtx(id, cv) { _deleteImg(id, cv); },
+    clearCanvas(cv) { images[cv]=[]; _selId=null; _selCanvas=null; saveImages(); renderImages(cv); },
+  };
+})();
+OW._jumpToGroup = function(gid) {
+  // call selectGroup via inner closure — we expose it in public
+  OW.selectGroup(gid || 'all');
+};
+
+// ──────────────────────────────────────────────
+// Boot
+// ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  OW.init();
+  EC.init();
+  PO.init();
+  IMG.init();
+
+  // sync dot: always "local" until Firebase is wired
+  document.getElementById('syncDot').style.background = '#34d399';
+  document.getElementById('syncText').textContent = '로컬 저장';
+
+  // Make all modal-boxes stop propagation so clicks inside don't
+  // bubble to overlay (which would close them)
+  document.querySelectorAll('.modal-box').forEach(box => {
+    box.addEventListener('click', e => e.stopPropagation());
+  });
+
+  // Click on overlay background (outside modal-box) closes modal
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', () => {
+      overlay.classList.remove('open');
+    });
+  });
+});
+</script>
+</body>
+</html>
