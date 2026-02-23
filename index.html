@@ -879,233 +879,38 @@ select.field-input { appearance: none; cursor: pointer; }
 .img-sel-rect { fill: none; stroke: #4f8ef7; stroke-width: 1.5; stroke-dasharray: 4,3; pointer-events: none; }
 
 /* ====================================================
-   MOBILE: BOTTOM TAB BAR & DRAWERS
+   MOBILE RESPONSIVE
 ==================================================== */
-.mobile-tabbar { display: none; }
-.mobile-drawer-overlay { display: none; }
-.mobile-drawer { transform: translateY(100%); transition: transform .28s cubic-bezier(.4,0,.2,1); }
-.mobile-search-drawer { transform: translateY(-110%); transition: transform .25s cubic-bezier(.4,0,.2,1); }
-
 @media (max-width: 768px) {
-
-  /* ── TOP NAV: single compact row ── */
-  .topnav { height: 48px; padding: 0 10px; flex-wrap: nowrap; gap: 6px; overflow: hidden; }
-  .nav-logo { border-right: none; padding: 0; font-size: .85rem; }
-  .nav-logo span { display: none; }
-  .tab-switcher { display: none; }
-  .nav-spacer { display: none; }
-  .nav-search { width: 36px; min-width: 36px; padding: 0 8px; overflow: hidden; }
+  .topnav { height: auto; flex-wrap: wrap; padding: 6px 8px; gap: 5px; }
+  .nav-logo { border-right: none; height: auto; padding: 0 4px; }
+  .tab-btn { padding: 0 9px; font-size: 0.75rem; }
+  .tab-label { display: none; }
+  .nav-search { width: 100%; order: 10; flex-basis: 100%; }
   .sync-status { display: none; }
   #navExportBtn { display: none; }
-  .nav-right { border-left: none; padding: 0 0 0 4px; gap: 4px; }
-  #navAddBtn { padding: 5px 12px; font-size: .78rem; }
-
-  /* ── BOTTOM TAB BAR ── */
-  .mobile-tabbar {
-    display: flex;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    height: 56px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    z-index: 100;
-    align-items: stretch;
-  }
-  .mb-tab {
-    flex: 1; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 2px; background: transparent; border: none;
-    color: var(--muted); font-family: 'Pretendard', sans-serif;
-    font-size: .6rem; font-weight: 500; cursor: pointer;
-    padding: 5px 2px 10px; position: relative;
-  }
-  .mb-tab-icon { font-size: 19px; line-height: 1; }
-  .mb-tab.active { color: var(--text); }
-  .mb-tab.active::before {
-    content: ''; position: absolute;
-    top: 0; left: 18%; right: 18%; height: 2px;
-    border-radius: 0 0 2px 2px; background: var(--ow-accent);
-  }
-  .mb-tab.active[data-tab="eco"]::before { background: var(--ec-accent); }
-  .mb-tab.active[data-tab="po"]::before  { background: var(--po-accent); }
-
-  /* ── PAGES: leave room for bottom bar ── */
-  .page { padding-bottom: 56px; }
-
-  /* ── SIDEBAR: hidden, replaced by drawer ── */
-  .sidebar { display: none !important; }
-
-  /* ── GROUP/INDUSTRY DRAWER ── */
-  .mobile-drawer-overlay {
-    display: block;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.55);
-    z-index: 200; opacity: 0; pointer-events: none;
-    transition: opacity .25s;
-  }
-  .mobile-drawer-overlay.open { opacity: 1; pointer-events: auto; }
-
-  .mobile-drawer {
-    position: fixed;
-    bottom: 56px; left: 0; right: 0;
-    max-height: 68vh;
-    background: var(--surface);
-    border-radius: 18px 18px 0 0;
-    border-top: 1px solid var(--border);
-    z-index: 201;
-    display: flex; flex-direction: column;
-  }
-  .mobile-drawer.open { transform: translateY(0); }
-
-  .mobile-drawer-handle {
-    width: 36px; height: 4px; background: var(--border2);
-    border-radius: 2px; margin: 10px auto 0; flex-shrink: 0;
-  }
-  .mobile-drawer-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 8px; flex-shrink: 0;
-  }
-  .mobile-drawer-title { font-size: .9rem; font-weight: 700; }
-  .mobile-drawer-add {
-    padding: 7px 14px; border-radius: 8px;
-    border: 1px solid var(--border2);
-    background: transparent; color: var(--muted2);
-    font-family: 'Pretendard', sans-serif; font-size: .8rem; cursor: pointer;
-  }
-  .mobile-drawer-list {
-    flex: 1; overflow-y: auto; padding: 4px 10px 12px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .mobile-drawer-list .list-item {
-    padding: 13px 12px !important; font-size: .9rem;
-    white-space: normal !important; overflow: visible !important;
-    min-height: 48px; gap: 10px !important;
-  }
-  .mobile-drawer-list .list-name,
-  .mobile-drawer-list .list-count {
-    opacity: 1 !important; width: auto !important;
-    overflow: visible !important; pointer-events: auto !important;
-  }
-  .mobile-drawer-list .list-dot { width: 10px; height: 10px; }
-  .mobile-drawer-list .list-icon { font-size: 18px; }
-  .mobile-drawer-list .list-rename-btn { display: none !important; }
-
-  /* ── SEARCH DRAWER ── */
-  .mobile-search-drawer {
-    position: fixed;
-    top: 48px; left: 0; right: 0;
-    max-height: calc(100vh - 48px - 56px);
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    z-index: 300;
-    display: flex; flex-direction: column;
-  }
-  .mobile-search-drawer.open { transform: translateY(0); }
-
-  .mobile-search-bar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-  }
-  .mobile-search-bar input {
-    flex: 1; background: var(--panel);
-    border: 1px solid var(--border2); border-radius: 10px;
-    padding: 10px 14px; color: var(--text);
-    font-family: 'Pretendard', sans-serif; font-size: 1rem; outline: none;
-  }
-  .mobile-search-bar input:focus { border-color: var(--ow-accent); }
-  .mobile-search-cancel {
-    background: none; border: none; color: var(--ow-accent);
-    font-size: .88rem; font-family: 'Pretendard', sans-serif;
-    cursor: pointer; white-space: nowrap; padding: 4px 2px;
-  }
-  .mobile-search-results {
-    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  }
-  .mobile-search-results .search-item { padding: 13px 16px; min-height: 52px; }
-  .mobile-search-results .search-item-name { font-size: .9rem; }
-
-  /* ── RIGHT PANEL → tall bottom sheet ── */
-  .right-panel {
-    width: 100% !important; height: 82vh !important;
-    top: auto !important; bottom: 56px !important;
-    right: 0 !important; left: 0 !important;
-    border-left: none !important;
-    border-top: 1px solid var(--border) !important;
-    border-radius: 18px 18px 0 0 !important;
-    transform: translateY(100%) !important;
-    transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
-    z-index: 150 !important;
-  }
-  .right-panel.open { transform: translateY(0) !important; }
-  .right-panel .panel-header {
-    padding: 14px 16px 10px; position: relative;
-  }
-  .right-panel .panel-header::before {
-    content: ''; position: absolute;
-    top: 7px; left: 50%; transform: translateX(-50%);
-    width: 36px; height: 4px;
-    background: var(--border2); border-radius: 2px;
-  }
-  .right-panel .panel-title { margin-top: 8px; font-size: .95rem; }
-  .right-panel .panel-body {
-    padding: 12px 18px 100px;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-  }
-  .right-panel .field-input { font-size: 16px !important; padding: 10px 12px; }
-  .right-panel select.field-input { font-size: 16px !important; }
-  .right-panel .field-group { margin-bottom: 14px; }
-  .right-panel .btn-full { min-height: 44px; font-size: .88rem; }
-
-  /* ── EDGE PANEL → bottom sheet ── */
-  .edge-panel {
-    width: 100% !important; left: 0 !important; right: 0 !important;
-    bottom: 56px !important; border-radius: 18px 18px 0 0 !important;
-    max-height: 56vh; overflow-y: auto;
-  }
-  .edge-panel-body { padding: 10px 16px; }
-  .edge-panel-field { gap: 8px; }
-  .ep-dir-select, .ep-note-input, .ep-rate-input { width: 100%; }
-  .edge-panel-actions { padding: 10px 16px 16px; }
-
-  /* ── TOOLBAR ── */
-  .toolbar { top: 8px; padding: 3px 5px; gap: 2px; }
-  .tool-btn { width: 36px; height: 36px; font-size: 15px; }
-
-  /* ── HIDE ── */
+  .sidebar { width: 40px !important; min-width: 40px !important; }
+  .sidebar .sidebar-title, .sidebar .list-name, .sidebar .list-count,
+  .sidebar .sidebar-add-btn, .sidebar .add-list-btn { opacity: 0; width: 0; overflow: hidden; pointer-events: none; }
+  .sidebar .list-item { padding: 8px !important; justify-content: center !important; gap: 0 !important; }
+  .sidebar.mobile-open { width: 200px !important; min-width: 200px !important; position: absolute; top: 0; left: 0; height: 100%; z-index: 30; box-shadow: 4px 0 24px rgba(0,0,0,0.7); }
+  .sidebar.mobile-open .sidebar-title, .sidebar.mobile-open .list-name, .sidebar.mobile-open .list-count { opacity: 1; width: auto; overflow: visible; pointer-events: auto; }
+  .sidebar.mobile-open .sidebar-add-btn, .sidebar.mobile-open .add-list-btn { opacity: 1; width: auto; overflow: visible; pointer-events: auto; }
+  .sidebar.mobile-open .list-item { padding: 8px 10px !important; justify-content: flex-start !important; gap: 8px !important; }
+  .right-panel { width: 100%; height: 65vh; top: auto; bottom: 0; right: 0; border-left: none; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; transform: translateY(100%); transition: transform 0.26s cubic-bezier(0.4,0,0.2,1); }
+  .right-panel.open { transform: translateY(0); }
+  .edge-panel { width: calc(100% - 24px); }
   .canvas-hint { display: none; }
   .eco-legend, .ow-legend, .po-legend { display: none; }
-
-  /* ── COMPANY POPUP → bottom sheet ── */
-  .company-popup {
-    position: fixed !important;
-    width: 100% !important; max-width: 100% !important;
-    left: 0 !important; right: 0 !important;
-    bottom: 56px !important; top: auto !important;
-    border-radius: 18px 18px 0 0 !important;
-    border: none !important; border-top: 1px solid var(--border) !important;
-    max-height: 72vh; overflow-y: auto;
-    -webkit-overflow-scrolling: touch; padding-bottom: 20px;
-  }
-  .company-popup::before {
-    content: ''; display: block; width: 36px; height: 4px;
-    background: var(--border2); border-radius: 2px; margin: 8px auto 10px;
-  }
-  .popup-action-btn { min-height: 44px; }
-
-  /* ── MODALS → bottom sheet ── */
-  .modal-box {
-    width: 100% !important; max-width: 100% !important;
-    border-radius: 18px 18px 0 0 !important;
-    position: fixed !important; bottom: 0 !important; left: 0 !important;
-    margin: 0 !important; padding: 18px 18px 40px !important;
-    max-height: 92vh; overflow-y: auto;
-  }
-  .modal-box .field-input { font-size: 16px !important; padding: 10px 12px; }
-  .modal-box select.field-input { font-size: 16px !important; }
-  .modal-box .modal-actions .btn { min-height: 44px; font-size: .88rem; }
+  .company-popup { width: calc(100vw - 24px); left: 12px !important; }
+  .modal-box { width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; margin: 0; }
   .modal-overlay { align-items: flex-end; }
   .canvas-svg { touch-action: none; }
+  .toolbar { padding: 3px 4px; }
+  .tool-btn { width: 28px; height: 28px; font-size: 13px; }
 }
+
+/* sidebar toggle on mobile — tap to open */
 
 /* ====================================================
    POLICY / GEO MODULE STYLES
@@ -1327,13 +1132,14 @@ path.edge-sel, polygon.edge-sel-arr {
 
   <div class="nav-spacer"></div>
 
-  <!-- SEARCH BAR (desktop) -->
+  <!-- SEARCH BAR -->
   <div class="nav-search" id="navSearchWrap">
     <span class="nav-search-icon">🔍</span>
     <input class="nav-search-input" id="navSearchInput" placeholder="회사 검색 (지분+생태계)" autocomplete="off"
       oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)" onfocus="showSearchDrop()" />
     <button class="nav-search-clear" id="navSearchClear" onclick="clearSearch()" style="display:none">✕</button>
   </div>
+  <!-- SEARCH DROPDOWN -->
   <div class="search-drop" id="searchDrop" style="display:none"></div>
 
   <div class="nav-right">
@@ -1344,48 +1150,6 @@ path.edge-sel, polygon.edge-sel-arr {
     <button class="btn btn-outline btn-sm" id="navExportBtn" onclick="currentExport()">내보내기</button>
     <button class="btn btn-primary-ow btn-sm" id="navAddBtn" onclick="currentAddNode()">+ 추가</button>
   </div>
-</div>
-
-<!-- ============================================================
-     MOBILE: DRAWER OVERLAY + DRAWER + SEARCH DRAWER + BOTTOM TABBAR
-============================================================ -->
-<div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="closeMobileDrawer()"></div>
-<div class="mobile-drawer" id="mobileDrawer">
-  <div class="mobile-drawer-handle"></div>
-  <div class="mobile-drawer-header">
-    <div class="mobile-drawer-title" id="mobileDrawerTitle">그룹</div>
-    <button class="mobile-drawer-add" id="mobileDrawerAddBtn" onclick="mobileDrawerAdd()">＋ 추가</button>
-  </div>
-  <div class="mobile-drawer-list" id="mobileDrawerList"></div>
-</div>
-
-<div class="mobile-search-drawer" id="mobileSearchDrawer">
-  <div class="mobile-search-bar">
-    <input id="mobileSearchInput" type="search" placeholder="회사 / 기업 / 정책 검색"
-      autocomplete="off"
-      oninput="onSearchInput(this.value)"
-      onkeydown="onSearchKey(event)">
-    <button class="mobile-search-cancel" onclick="closeMobileSearch()">취소</button>
-  </div>
-  <div class="mobile-search-results" id="mobileSearchResults"></div>
-</div>
-
-<div class="mobile-tabbar">
-  <button class="mb-tab active" data-tab="ow" onclick="switchTab('ow')">
-    <span class="mb-tab-icon">🏢</span><span>지분</span>
-  </button>
-  <button class="mb-tab" data-tab="eco" onclick="switchTab('eco')">
-    <span class="mb-tab-icon">🌐</span><span>생태계</span>
-  </button>
-  <button class="mb-tab" data-tab="po" onclick="switchTab('po')">
-    <span class="mb-tab-icon">🌍</span><span>정책</span>
-  </button>
-  <button class="mb-tab" data-tab="grp" onclick="openMobileDrawer()">
-    <span class="mb-tab-icon">☰</span><span>그룹</span>
-  </button>
-  <button class="mb-tab" data-tab="srch" onclick="openMobileSearch()">
-    <span class="mb-tab-icon">🔍</span><span>검색</span>
-  </button>
 </div>
 
 <!-- ============================================================
@@ -2249,11 +2013,6 @@ document.addEventListener('click', (e) => {
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  // sync mobile bottom tab bar
-  document.querySelectorAll('.mb-tab[data-tab]').forEach(b => {
-    if (b.dataset.tab !== 'grp' && b.dataset.tab !== 'srch')
-      b.classList.toggle('active', b.dataset.tab === tab);
-  });
   document.getElementById('page-ow').classList.toggle('active', tab === 'ow');
   document.getElementById('page-eco').classList.toggle('active', tab === 'eco');
   document.getElementById('page-po').classList.toggle('active',  tab === 'po');
@@ -2262,17 +2021,25 @@ function switchTab(tab) {
   if (tab === 'eco') { addBtn.className = 'btn btn-sm btn-primary-ec'; addBtn.textContent = '+ 기업 추가'; }
   if (tab === 'po')  { addBtn.className = 'btn btn-sm btn-primary-po'; addBtn.textContent = '+ 카드 추가'; }
   closePopup();
-  if (typeof closeMobileDrawer === 'function') closeMobileDrawer();
 }
 
-// Sidebar collapse (desktop only — mobile uses drawer)
+// Sidebar collapse
 function toggleSidebar(id) {
-  if (window.innerWidth <= 768) return;
   const sb = document.getElementById(id);
   const btn = sb.querySelector('.sidebar-toggle');
-  const collapsed = sb.classList.toggle('collapsed');
-  btn.textContent = collapsed ? '▶' : '◀';
-  btn.title = collapsed ? '사이드바 열기' : '사이드바 접기';
+  if (window.innerWidth <= 768) {
+    // 모바일: mobile-open 토글
+    const isOpen = sb.classList.toggle('mobile-open');
+    btn.textContent = isOpen ? '◀' : '▶';
+    if (isOpen) {
+      const close = (ev) => { if (!sb.contains(ev.target)) { sb.classList.remove('mobile-open'); btn.textContent = '▶'; document.removeEventListener('click', close); }};
+      setTimeout(() => document.addEventListener('click', close), 50);
+    }
+  } else {
+    const collapsed = sb.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '사이드바 열기' : '사이드바 접기';
+  }
 }
 
 function currentAddNode()  { if(currentTab==='ow') OW.openAddNode(); else if(currentTab==='eco') EC.openAddNode(); else PO.openAddNode(); }
@@ -2929,13 +2696,9 @@ const OW = (() => {
 
     const popup = document.getElementById('companyPopup');
     popup.style.display = 'block';
-    if (window.innerWidth > 768) {
-      const x = Math.min(ev.clientX + 12, window.innerWidth  - 330);
-      const y = Math.min(ev.clientY + 12, window.innerHeight - 340);
-      popup.style.left = x + 'px'; popup.style.top = y + 'px';
-    } else {
-      popup.style.left = ''; popup.style.top = '';
-    }
+    const x = Math.min(ev.clientX + 12, window.innerWidth  - 330);
+    const y = Math.min(ev.clientY + 12, window.innerHeight - 340);
+    popup.style.left = x + 'px'; popup.style.top = y + 'px';
   }
 
   // ── group management ──
@@ -3523,13 +3286,9 @@ const EC = (() => {
 
     const popup = document.getElementById('companyPopup');
     popup.style.display = 'block';
-    if (window.innerWidth > 768) {
-      const x = Math.min(ev.clientX+12, window.innerWidth-330);
-      const y = Math.min(ev.clientY+12, window.innerHeight-350);
-      popup.style.left = x+'px'; popup.style.top = y+'px';
-    } else {
-      popup.style.left = ''; popup.style.top = '';
-    }
+    const x = Math.min(ev.clientX+12, window.innerWidth-330);
+    const y = Math.min(ev.clientY+12, window.innerHeight-350);
+    popup.style.left = x+'px'; popup.style.top = y+'px';
   }
 
   // ── industry management ──
@@ -4698,88 +4457,6 @@ OW._jumpToGroup = function(gid) {
 // ──────────────────────────────────────────────
 // Boot
 // ──────────────────────────────────────────────
-
-// ══════════════════════════════════════════════
-//  MOBILE HELPERS
-// ══════════════════════════════════════════════
-
-function openMobileDrawer() {
-  const overlay = document.getElementById('mobileDrawerOverlay');
-  const drawer  = document.getElementById('mobileDrawer');
-  const title   = document.getElementById('mobileDrawerTitle');
-  const addBtn  = document.getElementById('mobileDrawerAddBtn');
-  const list    = document.getElementById('mobileDrawerList');
-
-  let srcId, addLabel;
-  if (currentTab === 'ow') {
-    srcId = 'ow-groupList'; addLabel = '＋ 그룹';
-    title.textContent = '그룹 선택';
-    addBtn.onclick = () => { closeMobileDrawer(); OW.openAddGroup(); };
-  } else if (currentTab === 'eco') {
-    srcId = 'ec-industryList'; addLabel = '＋ 산업';
-    title.textContent = '산업 선택';
-    addBtn.onclick = () => { closeMobileDrawer(); EC.openAddIndustry(); };
-  } else {
-    srcId = 'po-regionList'; addLabel = '＋ 지역';
-    title.textContent = '지역 선택';
-    addBtn.onclick = () => { closeMobileDrawer(); PO.openAddRegion(); };
-  }
-  addBtn.textContent = addLabel;
-
-  const src = document.getElementById(srcId);
-  list.innerHTML = '';
-  if (src) {
-    Array.from(src.children).forEach(el => {
-      const clone = el.cloneNode(true);
-      clone.querySelectorAll('.list-rename-btn').forEach(b => b.remove());
-      clone.addEventListener('click', () => setTimeout(closeMobileDrawer, 100));
-      list.appendChild(clone);
-    });
-  }
-
-  overlay.classList.add('open');
-  drawer.classList.add('open');
-}
-
-function closeMobileDrawer() {
-  document.getElementById('mobileDrawerOverlay').classList.remove('open');
-  document.getElementById('mobileDrawer').classList.remove('open');
-}
-
-function mobileDrawerAdd() {} // overridden in openMobileDrawer
-
-function openMobileSearch() {
-  document.getElementById('mobileSearchDrawer').classList.add('open');
-  setTimeout(() => document.getElementById('mobileSearchInput').focus(), 120);
-}
-
-function closeMobileSearch() {
-  document.getElementById('mobileSearchDrawer').classList.remove('open');
-  document.getElementById('mobileSearchInput').value = '';
-  document.getElementById('mobileSearchResults').innerHTML = '';
-}
-
-// Patch onSearchInput to also populate mobile results
-const _origOnSearchInput = onSearchInput;
-onSearchInput = function(val) {
-  _origOnSearchInput(val);
-  // mirror results to mobile drawer
-  if (!val.trim()) {
-    const mr = document.getElementById('mobileSearchResults');
-    if (mr) mr.innerHTML = '';
-    return;
-  }
-  const desktopDrop = document.getElementById('searchDrop');
-  const mobileRes   = document.getElementById('mobileSearchResults');
-  if (desktopDrop && mobileRes) {
-    mobileRes.innerHTML = desktopDrop.innerHTML;
-    // re-attach click handlers to close mobile search
-    mobileRes.querySelectorAll('.search-item').forEach(item => {
-      item.addEventListener('click', closeMobileSearch);
-    });
-  }
-};
-
 window.addEventListener('DOMContentLoaded', async () => {
   OW.init();
   EC.init();
