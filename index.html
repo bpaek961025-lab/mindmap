@@ -5,6 +5,75 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MindMap Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- ======================================================
+     Firebase — 실시간 동기화
+====================================================== -->
+<script type="module">
+import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDxHG5LNg7t6QUICuqMlnh2rvDYp2tYSLI",
+  authDomain:        "mindmap-studio.firebaseapp.com",
+  projectId:         "mindmap-studio",
+  storageBucket:     "mindmap-studio.firebasestorage.app",
+  messagingSenderId: "986333004561",
+  appId:             "1:986333004561:web:6ae4157b4428021f4382b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const REF = doc(db, "mindmap", "shared");
+
+let debounceTimer = null;
+let myWrite = false;
+
+/* 저장 (300ms 디바운스) */
+window._fbSave = (key, data) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    try {
+      myWrite = true;
+      await setDoc(REF, { [key]: JSON.stringify(data) }, { merge: true });
+      _sync('saved');
+    } catch(e) { _sync('error'); }
+  }, 300);
+};
+
+/* 초기 로드 */
+window._fbLoad = async (key, def) => {
+  try {
+    const snap = await getDoc(REF);
+    if (snap.exists() && snap.data()[key]) return JSON.parse(snap.data()[key]);
+  } catch(e) {}
+  return def;
+};
+
+/* 실시간 구독 — 다른 기기에서 바뀌면 즉시 반영 */
+window.addEventListener('load', () => {
+  onSnapshot(REF, snap => {
+    if (myWrite) { myWrite = false; return; }
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (d.ow_data  && window.OW)  try { OW._syncCloud(JSON.parse(d.ow_data));  } catch(e){}
+    if (d.ec_data  && window.EC)  try { EC._syncCloud(JSON.parse(d.ec_data));  } catch(e){}
+    if (d.po_data  && window.PO)  try { PO._syncCloud(JSON.parse(d.po_data));  } catch(e){}
+    if (d.img_data && window.IMG) try { IMG._syncCloud(JSON.parse(d.img_data)); } catch(e){}
+    _sync('synced');
+  });
+});
+
+function _sync(s) {
+  const dot  = document.getElementById('syncDot');
+  const txt  = document.getElementById('syncText');
+  if (!dot) return;
+  if (s==='saved')  { dot.style.background='#34d399'; txt.textContent='저장됨'; }
+  if (s==='synced') { dot.style.background='#34d399'; txt.textContent='동기화됨'; }
+  if (s==='error')  { dot.style.background='#f87171'; txt.textContent='저장 오류'; }
+}
+</script>
 <style>
 /* ====================================================
    GLOBAL RESET & VARIABLES
@@ -810,6 +879,40 @@ select.field-input { appearance: none; cursor: pointer; }
 .img-sel-rect { fill: none; stroke: #4f8ef7; stroke-width: 1.5; stroke-dasharray: 4,3; pointer-events: none; }
 
 /* ====================================================
+   MOBILE RESPONSIVE
+==================================================== */
+@media (max-width: 768px) {
+  .topnav { height: auto; flex-wrap: wrap; padding: 6px 8px; gap: 5px; }
+  .nav-logo { border-right: none; height: auto; padding: 0 4px; }
+  .tab-btn { padding: 0 9px; font-size: 0.75rem; }
+  .tab-label { display: none; }
+  .nav-search { width: 100%; order: 10; flex-basis: 100%; }
+  .sync-status { display: none; }
+  #navExportBtn { display: none; }
+  .sidebar { width: 40px !important; min-width: 40px !important; }
+  .sidebar .sidebar-title, .sidebar .list-name, .sidebar .list-count,
+  .sidebar .sidebar-add-btn, .sidebar .add-list-btn { opacity: 0; width: 0; overflow: hidden; pointer-events: none; }
+  .sidebar .list-item { padding: 8px !important; justify-content: center !important; gap: 0 !important; }
+  .sidebar.mobile-open { width: 200px !important; min-width: 200px !important; position: absolute; top: 0; left: 0; height: 100%; z-index: 30; box-shadow: 4px 0 24px rgba(0,0,0,0.7); }
+  .sidebar.mobile-open .sidebar-title, .sidebar.mobile-open .list-name, .sidebar.mobile-open .list-count { opacity: 1; width: auto; overflow: visible; pointer-events: auto; }
+  .sidebar.mobile-open .sidebar-add-btn, .sidebar.mobile-open .add-list-btn { opacity: 1; width: auto; overflow: visible; pointer-events: auto; }
+  .sidebar.mobile-open .list-item { padding: 8px 10px !important; justify-content: flex-start !important; gap: 8px !important; }
+  .right-panel { width: 100%; height: 65vh; top: auto; bottom: 0; right: 0; border-left: none; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; transform: translateY(100%); transition: transform 0.26s cubic-bezier(0.4,0,0.2,1); }
+  .right-panel.open { transform: translateY(0); }
+  .edge-panel { width: calc(100% - 24px); }
+  .canvas-hint { display: none; }
+  .eco-legend, .ow-legend, .po-legend { display: none; }
+  .company-popup { width: calc(100vw - 24px); left: 12px !important; }
+  .modal-box { width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; margin: 0; }
+  .modal-overlay { align-items: flex-end; }
+  .canvas-svg { touch-action: none; }
+  .toolbar { padding: 3px 4px; }
+  .tool-btn { width: 28px; height: 28px; font-size: 13px; }
+}
+
+/* sidebar toggle on mobile — tap to open */
+
+/* ====================================================
    POLICY / GEO MODULE STYLES
 ==================================================== */
 .btn-primary-po { background: var(--po-accent); color: #000; font-weight:700; }
@@ -1017,13 +1120,13 @@ path.edge-sel, polygon.edge-sel-arr {
 
   <div class="tab-switcher">
     <button class="tab-btn active" data-tab="ow" onclick="switchTab('ow')">
-      🏢 지분 구조도
+      🏢 <span class="tab-label">지분 구조도</span>
     </button>
     <button class="tab-btn" data-tab="eco" onclick="switchTab('eco')">
-      🌐 산업 생태계
+      🌐 <span class="tab-label">산업 생태계</span>
     </button>
     <button class="tab-btn" data-tab="po" onclick="switchTab('po')">
-      🌍 정책·국가 지도
+      🌍 <span class="tab-label">정책·국가 지도</span>
     </button>
   </div>
 
@@ -1923,10 +2026,20 @@ function switchTab(tab) {
 // Sidebar collapse
 function toggleSidebar(id) {
   const sb = document.getElementById(id);
-  const collapsed = sb.classList.toggle('collapsed');
   const btn = sb.querySelector('.sidebar-toggle');
-  btn.textContent = collapsed ? '▶' : '◀';
-  btn.title = collapsed ? '사이드바 열기' : '사이드바 접기';
+  if (window.innerWidth <= 768) {
+    // 모바일: mobile-open 토글
+    const isOpen = sb.classList.toggle('mobile-open');
+    btn.textContent = isOpen ? '◀' : '▶';
+    if (isOpen) {
+      const close = (ev) => { if (!sb.contains(ev.target)) { sb.classList.remove('mobile-open'); btn.textContent = '▶'; document.removeEventListener('click', close); }};
+      setTimeout(() => document.addEventListener('click', close), 50);
+    }
+  } else {
+    const collapsed = sb.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '▶' : '◀';
+    btn.title = collapsed ? '사이드바 열기' : '사이드바 접기';
+  }
 }
 
 function currentAddNode()  { if(currentTab==='ow') OW.openAddNode(); else if(currentTab==='eco') EC.openAddNode(); else PO.openAddNode(); }
@@ -1940,6 +2053,7 @@ function loadLS(key, def) {
 }
 function saveLS(key, data) {
   try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+  if (typeof window._fbSave === 'function') window._fbSave(key, data);
 }
 
 // ──────────────────────────────────────────────
@@ -2827,6 +2941,7 @@ const OW = (() => {
       render();
       setTimeout(() => { _flashNid = null; renderCanvas(); }, 1600);
     },
+    _syncCloud(newState) { state = newState; render(); },
   };
 })();
 
@@ -3480,11 +3595,9 @@ const EC = (() => {
       render();
       setTimeout(() => { _flashNid = null; renderCanvas(); }, 1600);
     },
+    _syncCloud(newState) { state = newState; render(); },
   };
 })();
-
-// ──────────────────────────────────────────────
-//  POLICY / GEO MODULE
 // ──────────────────────────────────────────────
 const PO = (() => {
   // state
@@ -4092,6 +4205,7 @@ const PO = (() => {
       setTimeout(()=>{_flashNid=null; renderCanvas();},1600);
     },
     getState(){ return state; },
+    _syncCloud(newState) { state = newState; render(); },
   };
 })();
 // ──────────────────────────────────────────────
@@ -4107,6 +4221,7 @@ const IMG = (() => {
 
   function saveImages() {
     try { localStorage.setItem('img_data', JSON.stringify(images)); } catch(e){}
+    if (typeof window._fbSave === 'function') window._fbSave('img_data', images);
   }
   function loadImages() {
     try { const d=localStorage.getItem('img_data'); if(d) images=JSON.parse(d); } catch(e){}
@@ -4331,6 +4446,7 @@ const IMG = (() => {
     },
     _deleteFromCtx(id, cv) { _deleteImg(id, cv); },
     clearCanvas(cv) { images[cv]=[]; _selId=null; _selCanvas=null; saveImages(); renderImages(cv); },
+    _syncCloud(newImages) { images = newImages; ['ow','ec','po'].forEach(cv => renderImages(cv)); },
   };
 })();
 OW._jumpToGroup = function(gid) {
@@ -4341,27 +4457,80 @@ OW._jumpToGroup = function(gid) {
 // ──────────────────────────────────────────────
 // Boot
 // ──────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   OW.init();
   EC.init();
   PO.init();
   IMG.init();
 
-  // sync dot: always "local" until Firebase is wired
-  document.getElementById('syncDot').style.background = '#34d399';
-  document.getElementById('syncText').textContent = '로컬 저장';
+  document.getElementById('syncDot').style.background = '#fbbf24';
+  document.getElementById('syncText').textContent = '연결 중...';
 
-  // Make all modal-boxes stop propagation so clicks inside don't
-  // bubble to overlay (which would close them)
+  // Firebase에서 최신 데이터 로드
+  if (typeof window._fbLoad === 'function') {
+    try {
+      const [owD, ecD, poD, imgD] = await Promise.all([
+        window._fbLoad('ow_data',  { groups:[], nodes:[], edges:[] }),
+        window._fbLoad('ec_data',  { industries:[], nodes:[], edges:[] }),
+        window._fbLoad('po_data',  { regions:[], nodes:[], edges:[] }),
+        window._fbLoad('img_data', { ow:[], ec:[], po:[] }),
+      ]);
+      OW._syncCloud(owD);
+      EC._syncCloud(ecD);
+      PO._syncCloud(poD);
+      IMG._syncCloud(imgD);
+      document.getElementById('syncDot').style.background = '#34d399';
+      document.getElementById('syncText').textContent = '클라우드 동기화';
+    } catch(e) {
+      document.getElementById('syncDot').style.background = '#94a3b8';
+      document.getElementById('syncText').textContent = '로컬 저장';
+    }
+  } else {
+    document.getElementById('syncDot').style.background = '#94a3b8';
+    document.getElementById('syncText').textContent = '로컬 저장';
+  }
+
+  // 모달 클릭 전파 차단
   document.querySelectorAll('.modal-box').forEach(box => {
     box.addEventListener('click', e => e.stopPropagation());
   });
-
-  // Click on overlay background (outside modal-box) closes modal
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', () => {
-      overlay.classList.remove('open');
-    });
+    overlay.addEventListener('click', () => overlay.classList.remove('open'));
+  });
+
+  // 모바일 터치 Pan/Zoom
+  ['ow-canvas','ec-canvas','po-canvas'].forEach(cid => {
+    const svg = document.getElementById(cid);
+    if (!svg) return;
+    const zgId = cid.replace('-canvas','-zoomGroup');
+    let lastT = null, lastDist = 0;
+    function getZG() { return document.getElementById(zgId); }
+    function getTr() { const t = new DOMMatrix(getComputedStyle(getZG()).transform); return {s:t.a||1,x:t.e||0,y:t.f||0}; }
+    function setTr(s,x,y) { getZG().setAttribute('transform',`translate(${x},${y}) scale(${s})`); }
+    svg.addEventListener('touchstart', e => {
+      e.preventDefault();
+      lastT = Array.from(e.touches);
+      if (e.touches.length === 2) lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    }, {passive:false});
+    svg.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const t = Array.from(e.touches);
+      if (!lastT) return;
+      const tr = getTr();
+      if (t.length === 1 && lastT.length === 1) {
+        setTr(tr.s, tr.x + t[0].clientX - lastT[0].clientX, tr.y + t[0].clientY - lastT[0].clientY);
+      } else if (t.length === 2 && lastT.length >= 2) {
+        const d = Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+        const f = d / (lastDist || d);
+        const ns = Math.max(0.15, Math.min(4, tr.s * f));
+        const cx = (t[0].clientX+t[1].clientX)/2 - svg.getBoundingClientRect().left;
+        const cy = (t[0].clientY+t[1].clientY)/2 - svg.getBoundingClientRect().top;
+        setTr(ns, cx - (cx - tr.x) * (ns/tr.s), cy - (cy - tr.y) * (ns/tr.s));
+        lastDist = d;
+      }
+      lastT = t;
+    }, {passive:false});
+    svg.addEventListener('touchend', () => { lastT = null; });
   });
 });
 </script>
